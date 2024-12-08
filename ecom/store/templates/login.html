@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+
+{% load socialaccount%}
+{% load account %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Login page </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Login to Your Account</p>
+        </div>
+    </div>
+</header>
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+</style>
+ 
+
+  <form action="" method='POST'>
+      {% csrf_token %}
+      <h3><strong>Login Form</strong></h3>
+      <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          <input class="form-control" name="username" placeholder="Enter email-address">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input class="form-control" type="password" name="password" placeholder="Enter password">
+        </div>
+
+        <button class="btn btn-primary" style="width:100%">Login to your account</button>
+        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+        <p> <a href="{% url 'password_reset' %}">Forgot Password?</a></p>
+ 
+<!-- Google Login Button -->
+ 
+
+ 
+{% comment %} 
+<a href="{% provider_login_url 'google' %}">Sign in with Google</a>
+<a href="{% provider_login_url 'facebook' %}">Sign in with Facebook</a> {% endcomment %}
+<!-- Google Sign-In Button -->
+
+<a href="{% provider_login_url 'google' %}" class="btn btn-success btn-lg btn-block button2">
+    <i class="fab fa-google"></i> Sign in with Google
+</a>
+
+<!-- Facebook Sign-In Button -->
+<a href="{% provider_login_url 'facebook' %}" class="btn btn-primary btn-lg btn-block button1">
+    <i class="fab fa-facebook-f"></i> Sign in with Facebook
+</a>
+
+
+  </form>
+
+  
+{% endblock content %}
+
+ 

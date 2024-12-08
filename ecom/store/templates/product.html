@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block content %}
+ 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phoneix</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+ 
+
+    <!-- Single Products -->
+    <div class="small-container single-product">
+        <div class="row">
+            <div class="col-2">
+                <div class="zoom-container">
+
+                <img src="{{ products.thumbnail.url }}" width="100%" id="ProductImg" class="thumbnail-img">
+                </div>
+                <div class="small-img-row" >
+                    {% for img in images %}
+                    <div class="small-img-col border">
+                        <div class="zoom-container">
+
+                        <img src="{{ img.image.url }}" width="100%" class="small-img" >
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                </div>
+
+            </div>
+            <div class="col-2">
+                <p>Home/ <a href="{% url 'product' products.id %}">{{ products.name }}</a></p>
+                
+
+                
+
+                <h1>{{ products.name }}</h1>
+                <h4>Price: ${{ products.price }}</h4>
+                <h4>Category: {{ products.category.name }}</h4>
+                <h4>Brand: {{ products.Brand }}</h4>
+                  
+                    <p><strong>Average Rating:</strong> 
+                        {% if avg_rating %}
+                            <span>
+                                {% for i in 1|add:""|join:"12345"|slice:":" %}
+                                    <i class="fa{% if i <= avg_rating %} fa-star{% else %} fa-star-o{% endif %}" style="color: gold;"></i>
+                                {% endfor %}
+                                <span>({{ avg_rating }} / 5.0)</span>
+                            </span>
+                        {% else %}
+                            <span>No ratings yet.</span>
+                        {% endif %}
+                    </p>
+                    Stock:
+                    {% if products.stock > 0 %}
+                        {{ product.stock }} available
+                    {% else %}
+                        Out of stock
+                    {% endif %}
+
+                    <br>
+                    
+                <a href="" class="btn">Add To Cart</a>
+
+                <h5>Product Details <i class="fa fa-indent"></i></h5>
+                <br>
+                <p>{{ products.description }}</p>
+              
+            </div>
+        </div>
+    </div>
+   
+    
+     
+    <!-- Products review-->
+    <div class="container">
+        <div class="row">
+            <!-- Left Column: Review Form -->
+            <div class="col-md-6">
+                <h3>Submit Your Review</h3>
+                {% if user.is_authenticated %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}  <!-- Display the review form -->
+                        <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </form>
+                {% else %}
+                    <p>Please <a href="{% url 'login' %}">Log in here</a> to submit your review.</p>
+                {% endif %}
+            </div>
+            
+    
+            <!-- Right Column: Reviews -->
+            <div class="col-md-6">
+                <h3>Reviews</h3>
+                {% for review in reviews %}
+                    <div class="review">
+                        <p><strong>{{ review.user.username }}</strong> ({{ review.created_at|date:"M d, Y" }})</p>
+                        <p>
+                            <!-- Display Rating as Golden Stars -->
+                            {% for i in 1|add:""|join:"12345"|slice:":" %}
+                                <i class="fa{% if i <= review.rating %} fa-star{% else %} fa-star-o{% endif %}" style="color: gold;"></i>
+                            {% endfor %}
+                            <span>({{ review.rating }} / 5)</span>
+                        </p>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                    <hr>
+                {% empty %}
+                    <p>No reviews yet. Be the first to review this product!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    
+
+    
+   <!-- Related Products -->
+<div class="small-container ">
+    <h2>Related Products</h2>
+    <div class="row ">
+        {% for related_product in related_products %}
+            <div class="col-4 border">
+                <img src="{{ related_product.thumbnail.url }}" alt="{{ related_product.name }}">
+                <h>Model:{{ related_product.name }}</p>
+                <h>Price $:{{ related_product.price }}</p>
+           
+
+                <a href="{% url 'product' related_product.pk %}">View Details</a>
+            </div>
+        {% empty %}
+            <p>No related products found.</p>
+        {% endfor %}
+    </div>
+</div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="footer-col-1">
+                    <h3>Download Our App</h3>
+                    <p>Download App for Android and ios mobile phone.</p>
+                    <div class="app-logo">
+                        <img src="images/play-store.png">
+                        <img src="images/app-store.png">
+                    </div>
+                </div>
+                <div class="footer-col-2">
+                    <img src="images/logo-white.png">
+                    <p>Our Purpose Is To Sustainably Make the Pleasure and Benefits of Sports Accessible to the Many.
+                    </p>
+                </div>
+                <div class="footer-col-3">
+                    <h3>Useful Links</h3>
+                    <ul>
+                        <li>Coupons</li>
+                        <li>Blog Post</li>
+                        <li>Return Policy</li>
+                        <li>Join Affiliate</li>
+                    </ul>
+                </div>
+                <div class="footer-col-4">
+                    <h3>Follow Us</h3>
+                    <ul>
+                        <li>Facebook</li>
+                        <li>Twitter</li>
+                        <li>Instagram</li>
+                        <li>Youtube</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <p class="copyright">Copyright 2020 - Samwit Adhikary</p>
+        </div>
+    </div>
+
+    <!-- javascript -->
+
+    <script>
+        var MenuItems = document.getElementById("MenuItems");
+        MenuItems.style.maxHeight = "0px";
+        function menutoggle() {
+            if (MenuItems.style.maxHeight == "0px") {
+                MenuItems.style.maxHeight = "200px"
+            }
+            else {
+                MenuItems.style.maxHeight = "0px"
+            }
+        }
+    </script>
+
+    <!-- product gallery -->
+    <script>
+        var ProductImg = document.getElementById("ProductImg");
+        var SmallImg = document.getElementsByClassName("small-img");
+
+        SmallImg[0].onclick = function () {
+            ProductImg.src = SmallImg[0].src;
+        }
+        SmallImg[1].onclick = function () {
+            ProductImg.src = SmallImg[1].src;
+        }
+        SmallImg[2].onclick = function () {
+            ProductImg.src = SmallImg[2].src;
+        }
+        SmallImg[3].onclick = function () {
+            ProductImg.src = SmallImg[3].src;
+        }
+
+    </script>
+    <script>
+        const zoomContainers = document.querySelectorAll('.zoom-container');
+    
+        zoomContainers.forEach(container => {
+            const img = container.querySelector('img');
+    
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left; // Cursor X within the container
+                const y = e.clientY - rect.top;  // Cursor Y within the container
+    
+                img.style.transformOrigin = `${x}px ${y}px`; // Adjust origin to cursor
+                img.style.transform = "scale(2)"; // Adjust zoom level
+            });
+    
+            container.addEventListener('mouseleave', () => {
+                img.style.transform = "scale(1)"; // Reset zoom on mouse leave
+                img.style.transformOrigin = "center"; // Reset origin
+            });
+        });
+    </script>
+    
+</body>
+
+</html>
+{% endblock content %}
