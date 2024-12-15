@@ -1,0 +1,84 @@
+{% extends "admin_base.html" %}
+
+ 
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Variant page </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Add a new Variant</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+</style>
+ 
+
+ 
+
+
+{% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+ 
+
+
+ 
+
+
+ {% if user.is_superuser %}
+
+ <h1>Add a New Variant</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <a href="{% url 'variant_list' %}">Back to Variants</a>
+
+    {% else %}
+    <p>You are not authorized to view this form.</p>
+    {% endif %}
+{% endblock content %}
+
+ 

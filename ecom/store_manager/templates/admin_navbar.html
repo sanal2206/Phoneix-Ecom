@@ -1,0 +1,69 @@
+
+{% load static %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<!-- Navigation-->
+ 
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="{% url 'home' %}">Phoneix</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                {% if user.is_authenticated %}
+                
+ 
+                <li class="nav-item"><a class="nav-link active" aria-current="page" ><strong>Welcome Back {{ user.username }}</strong> </a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="{% url 'admin_dashboard' %}">Home</a></li>
+             
+
+              
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Create</a>
+                    {% comment %} {% if user.is_authenticated %} {% endcomment %}
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href=" ">Create New item</a></li>
+
+                         <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_variant' %}">Create Variant</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_product' %}">Create Product</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_color' %}">Create Color</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_storage' %}">Create Storage</a></li>
+                    </ul> 
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">List</a>
+                 
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href=" ">View List</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'admin_user_list' %}">User list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}"> Product list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'color_list' %}">Color_list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'variant_list' %}">Variant_list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'storage_list' %}">Storage_list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">category_list</a></li>
+                    </ul> 
+                </li>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'admin_logout' %}">Logout</a></li>
+                {% else %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'admin_login' %}">Login</a></li>
+                {% endif %}
+            </ul>
+            {% if user.is_authenticated%}
+            <p class="nav-item"><a class="nav-link active" aria-current="page" href="{% url 'deleted_product_list' %}">Deleted Product</a></p>
+            
+            {% endif %}
+ 
+            
+        </div>
+    </div>
+    
+</nav>
+ 
+ 

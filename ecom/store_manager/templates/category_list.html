@@ -1,0 +1,135 @@
+
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Login page </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Login to Your Account</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+ 
+    /* Custom CSS for Table Styling */
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 18px;
+        text-align: left;
+    }
+    .custom-table th, .custom-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+    }
+    .custom-table th {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+    .custom-table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .custom-table tr:hover {
+        background-color: #ddd;
+    }
+    .badge {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        border-radius: 5px;
+    }
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+    }
+</style>
+</head>
+<body>
+{% if user.is_superuser %}
+<div class="container">
+    <h1 class="my-4 text-center">Categories</h1>
+
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <td>{{ category.name }}</td>
+                <td>
+                    {% if category.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- Edit Button -->
+                   
+                    
+                    <!-- Deactivate/Activate Button -->
+                    {% if category.is_active %}
+                        <a href="{% url 'deactivate_category' category.id %}" class="btn btn-warning btn-sm">Deactivate</a>
+                    {% else %}
+                        <a href="{% url 'activate_category' category.id %}" class="btn btn-success btn-sm">Activate</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock content %}
+
+ 
+
+ 

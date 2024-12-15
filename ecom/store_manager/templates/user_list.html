@@ -1,0 +1,167 @@
+ 
+ 
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Page</h1>
+            <p class="lead fw-normal text-white-50 mb-0">User List</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+ 
+ 
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    td a {
+        text-decoration: none;
+        color: #007bff;
+        margin-right: 10px;
+    }
+    td a:hover {
+        text-decoration: underline;
+    }
+    /* Active User */
+    .active-user {
+        background-color: #d4edda; /* Light green */
+    }
+    /* Blocked User */
+    .blocked-user {
+        background-color: #f8d7da; /* Light red */
+    }
+    /* Custom button styling */
+    .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        text-decoration: none;
+        width:80px
+    }
+    .btn-edit {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-edit:hover {
+        background-color: #0056b3;
+    }
+    .btn-toggle {
+        background-color: #ffc107;
+        color: white;
+    }
+    .btn-toggle:hover {
+        background-color: #e0a800;
+    }
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+</style>
+       
+{% if user.is_superuser %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th> <!-- Serial Number Column -->
+            <th>Email</th>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+  
+        {% for user in users %}
+        {% if not user.is_superuser %}
+            <tr class="{% if user.is_active %}active-user{% else %}blocked-user{% endif %}">
+                <td>{{ forloop.counter }}</td> <!-- Serial Number -->
+                <td>{{ user.email }}</td>
+                <td>{{ user.username }}</td>
+                <td>
+                    {% if user.is_active %}
+                        Active
+                    {% else %}
+                        Blocked
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'admin_edit_user' user.id %}" class="btn btn-edit">Edit</a>
+                    |
+                    <a href="{% url 'admin_toggle_user_status' user.id %}" class="btn btn-toggle">
+                        {% if user.is_active %}Block{% else %}Unblock{% endif %}
+                    </a>
+                    |
+                    <a href="{% url 'admin_delete_user' user.id %}" class="btn btn-delete" onclick="return confirm('Are you sure?');">Delete</a>
+                </td>
+            </tr>
+        {% endif %}
+        {% endfor %}
+        
+      
+    </tbody>
+</table>
+
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock content %}
+
+ 

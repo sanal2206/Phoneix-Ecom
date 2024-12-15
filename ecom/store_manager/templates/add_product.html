@@ -1,0 +1,93 @@
+
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Product Page  </h1>
+            <p class="lead fw-normal text-white-50 mb-0"> Add new product</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+</style>
+ 
+
+ 
+
+
+{% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+ 
+
+
+
+{% if user.is_superuser %}
+
+<h1>Add Product</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h2>Product Details</h2>
+    {{ product_form.as_p }}
+
+    <h2>Product Images (Minimum 3)</h2>
+    {{ image_formset.management_form }}
+    {% for form in image_formset %}
+        {{ form.as_p }}
+    {% endfor %}
+
+    <button type="submit">Add Product</button>
+</form>
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+  
+{% endblock content %}
+
+ 

@@ -46,9 +46,10 @@
                 
 
                 <h1>{{ products.name }}</h1>
-                <h4>Price: ${{ products.price }}</h4>
+                <h4>Price: $<span id="product-price">{{ products.price }}</span></h4>
+                
                 <h4>Category: {{ products.category.name }}</h4>
-                <h4>Brand: {{ products.Brand }}</h4>
+                <h4>Brand: {{ products.brand }}</h4>
                   
                     <p><strong>Average Rating:</strong> 
                         {% if avg_rating %}
@@ -71,6 +72,18 @@
 
                     <br>
                     
+                    <!-- Display Variants -->
+                    <h3>Select Variant</h3>
+                    <select id="variant-selector">
+                        <option value="" data-price="{{ products.price }}" selected>Base Price</option>
+                        {% for variant in variants %}
+                        <option value="{{ variant.id }}" data-price="{{ variant.price }}">
+                            {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
+                        </option>
+                        {% endfor %}
+                    </select>
+
+
                 <a href="" class="btn">Add To Cart</a>
 
                 <h5>Product Details <i class="fa fa-indent"></i></h5>
@@ -125,6 +138,8 @@
     </div>
     
     
+{% comment %}  {% endcomment %}
+
 
     
    <!-- Related Products -->
@@ -244,6 +259,17 @@
         });
     </script>
     
+
+    <script>
+        const variantSelector = document.getElementById('variant-selector');
+        const productPrice = document.getElementById('product-price');
+    
+        variantSelector.addEventListener('change', function () {
+            const selectedOption = variantSelector.options[variantSelector.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            productPrice.textContent = price;
+        });
+    </script>
 </body>
 
 </html>

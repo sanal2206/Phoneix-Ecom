@@ -14,7 +14,7 @@ from django.core.mail import send_mail
 # Create your views here.
 
 def home(request):
-    products=Product.objects.filter(is_active=True)
+    products=Product.objects.filter(is_active=True,is_deleted=False)
      
     # Calculate the average rating for each product
     for product in products:
@@ -52,6 +52,10 @@ def about(request):
 #         return render(request,'login.html',{})
 
 def login_user(request):
+    if request.user.is_authenticated:
+        return redirect("home") 
+    
+    
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -173,13 +177,17 @@ def resend_otp(request):
 # @login_required
 def product(request, pk):
     # Get the product by primary key (id)
-    products = get_object_or_404(Product, id=pk)
+    products = get_object_or_404(Product, id=pk, is_active=True,is_deleted=False)
     
     # Fetch images for the product
     images = ProductImage.objects.filter(product=products)
-    
+
+
+    # variants = products.variants.all() 
+    variants = products.variants.filter(is_active=True)
+     
     # Get related products (same category but excluding the current product)
-    related_products = Product.objects.filter(category=products.category).exclude(pk=pk)[:4]  # Show up to 4 related products
+    related_products = Product.objects.filter(category=products.category,is_active=True).exclude(pk=pk)[:4]  # Show up to 4 related products
     
 
     # Calculate the average rating for the product
@@ -212,8 +220,8 @@ def product(request, pk):
         'reviews': reviews,
         'form': form,  # Include the form for adding reviews
         'avg_rating': avg_rating,  # Pass the average rating to the template
-        
-
+        'variants':variants
+         
     }
 
     return render(request, 'product.html', context)
@@ -228,8 +236,8 @@ def category(request, cat):
     
     try:
         # Look up the category
-        category = get_object_or_404(Category, name=cat)  # This will raise a 404 if not found
-        print(f"Category found in database: {category.name}")  # Debugging statement
+        category = get_object_or_404(Category, name=cat,)  # This will raise a 404 if not found
+        # Debugging statement
         
         # Get products in the category
         products = Product.objects.filter(category=category,is_active=True)
@@ -246,3 +254,5 @@ def category(request, cat):
         print(f"Category not found: {cat}")  # Debugging statement
         messages.error(request, "Sorry... That category doesn't exist.")  # Use 'error' for better visibility
         return redirect('home')
+    
+    

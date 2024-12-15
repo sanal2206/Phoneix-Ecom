@@ -14,6 +14,12 @@ urlpatterns = [
     path("resend-otp", views.resend_otp, name="resend-otp"),
     path('product/<int:pk>',views.product,name='product'),
     path('category/<str:cat>',views.category,name='category'),
+
+#     #Profile
+#     path('profile/', views.profile_view, name='profile'),
+#     path('add-address/', views.add_address, name='add_address'),
+#     path('edit-address/<int:address_id>/', views.edit_address, name='edit_address'),
+#     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
       
     #passoword reset
      
@@ -31,7 +37,7 @@ urlpatterns = [
          auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), 
          name='password_reset_done'),
 
-     path('accounts/', include('allauth.urls')),
+     # path('accounts/', include('allauth.urls')),
 
      
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,166 @@
+ 
+ 
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Page</h1>
+            <p class="lead fw-normal text-white-50 mb-0">User List</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+ 
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 16px;
+        text-align: left;
+    }
+
+    table thead tr {
+        background-color: #f2f2f2;
+        border-bottom: 2px solid #ddd;
+    }
+
+    table th, table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    button {
+        background-color: #4CAF50; /* Green */
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #45a049; /* Darker green */
+    }
+
+    .edit-btn {
+        background-color: #008CBA; /* Blue */
+    }
+
+    .edit-btn:hover {
+        background-color: #005f6b; /* Darker blue */
+    }
+</style>
+{% if user.is_superuser %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Colour</th>
+            <th>Storage</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for variant in variants %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ variant.product.name }}</td>
+            <td>{{ variant.colour.colour }}</td>
+            <td>{{ variant.storage.capacity }}</td>
+            <td>{{ variant.price }}</td>
+            <td>{{ variant.stock }}</td>
+            <td>
+                {% if variant.is_active %}
+                    <span style="color: green;">Active</span>
+                {% else %}
+                    <span style="color: red;">Inactive</span>
+                {% endif %}
+            </td>
+            <td>
+                <!-- Activate/Deactivate Button -->
+                <form method="post" action="" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                    <button type="submit">
+                        {% if variant.is_active %}
+                            Deactivate
+                        {% else %}
+                            Activate
+                        {% endif %}
+                    </button>
+                </form>
+
+                <!-- Edit Button -->
+                <a href="{% url 'edit_variant' variant.id %}">
+                    <button type="button" class="edit-btn">Edit</button>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock content %}
+
+  
+ 
+
+ 

@@ -1,0 +1,223 @@
+ 
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Login page </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Login to Your Account</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+ 
+ 
+    .product-list {
+        margin-top: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .status {
+        font-weight: bold;
+        color: #fff;
+        padding: 5px;
+        border-radius: 5px;
+    }
+
+    .status.active {
+        background-color: green;
+    }
+
+    .status.inactive {
+        background-color: red;
+    }
+
+    .action-btn {
+        padding: 5px 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .deactivate-btn {
+        background-color: red;
+    }
+
+    .search-bar {
+        margin: 20px 0;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .search-bar input, .search-bar select {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+
+    
+</style>
+{% if user.is_superuser %}
+<h1>Product List</h1>
+ 
+<!-- Product List Table -->
+{% if products %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th> <!-- Serial Number Column -->
+
+                <th>Name</th>
+                <th>Price</th>
+                <th>Brand</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Thumbnail</th>
+                <th>Product images</th>
+                <th>Status</th>
+                <th>Actions</th>
+                <th>Soft Delete</th>
+                <th>Variants</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ forloop.counter }}</td> <!-- Serial Number -->
+
+                    <td><strong>{{ product.name }}</strong></td>
+
+                    <td>${{ product.price }}</td>
+                    <td>{{ product.brand }}</td>
+                    <td>{{ product.category.name }}</td>
+                    <td>{{ product.stock }}</td>
+                    <td><img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" style="max-width: 100px; height: auto;"></td>
+                    <td>
+                        <!-- Loop through each related image -->
+                        {% for image in product.images.all %}
+                        <img src="{{ image.image.url }}" alt="Image for {{ product.name }}" style="max-width: 100px; height: auto; margin: 5px;">
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="status {% if product.is_active %}active{% else %}inactive{% endif %}">
+                            {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'admin_edit_product' product.id %}" class="action-btn">Edit Product</a>
+                        <form method="post" action="{% url 'admin_deactivate_product' product.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn {% if product.is_active %}deactivate-btn{% endif %}">
+                                {% if product.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                        <td>
+                            <form method="post" action="{% url 'soft_delete_product' product.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn deactivate-btn">Delete</button>
+                            </form>
+                        </td>
+                        
+                    </td>
+                    
+                    <td>
+                        {% if product.variants.all %}
+                        <ul>
+                            {% for variant in product.variants.all %}
+                                <li>
+                                    {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
+                                    <span class="status {% if variant.is_active %}active{% else %}inactive{% endif %}">
+                                        {% if variant.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                    <!-- Form to toggle the is_active status -->
+                                    <form method="post" action="{% url 'admin_deactivate_variant' variant.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="action-btn {% if variant.is_active %}deactivate-btn{% endif %}">
+                                            {% if variant.is_active %}Deactivate{% else %}Activate{% endif %}
+                                        </button>
+                                    </form>
+                                    <br>
+                                </li>
+                                <br>
+                                <br>
+                            {% endfor %}
+                            <br>
+                        </ul>
+                    {% else %}
+                        <p>No variants available for this product.</p>
+                    {% endif %}
+                    
+                    </td> 
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No products found.</p>
+{% endif %}
+
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock content %}
+
+  
+ 
