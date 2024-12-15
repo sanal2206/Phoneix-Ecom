@@ -1,0 +1,37 @@
+# Ignore virtual environment
+venv/
+.venv/
+
+
+
+#remove in final push by making changes to
+ecom/settings.py
+
+# Ignore Python bytecode files
+*.pyc
+__pycache__/
+
+# Ignore Django database files
+db.sqlite3
+
+# Ignore media and static files
+media/
+static/
+
+# Ignore log files
+*.log
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+
+# Ignore environment variables file
+.env
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore coverage and testing files
+.coverage
+.pytest_cache/
