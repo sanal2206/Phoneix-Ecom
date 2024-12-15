@@ -3,6 +3,7 @@ venv/
 .venv/
 
 
+
 #remove in final push by making changes to
 ecom/settings.py
 
