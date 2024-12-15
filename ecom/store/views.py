@@ -1,12 +1,12 @@
 from django.shortcuts import render,redirect,get_object_or_404
-from .models import Product,Category,ProductImage,CustomUser,OtpToken
+from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django .contrib.auth import authenticate,login,logout
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from .forms import SignUpForm,ReviewForm
+from .forms import SignUpForm,ReviewForm,AddressForm,UserProfileForm
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.mail import send_mail
@@ -255,4 +255,91 @@ def category(request, cat):
         messages.error(request, "Sorry... That category doesn't exist.")  # Use 'error' for better visibility
         return redirect('home')
     
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@login_required
+def user_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('user_profile')
+    else:
+        form = UserProfileForm(instance=user)
+    return render(request, 'profile.html', {'form': form})
+
+
+
+@login_required
+def add_address(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            return redirect('user_profile')  # Redirect to profile page after adding address
+    else:
+        form = AddressForm()
+    return render(request, 'manage_address.html', {'form': form})
+
+
+
+ 
+
+@login_required
+def delete_address(request, address_id):
+    address = Address.objects.get(id=address_id, user=request.user)
+    address.delete()
+    return redirect('user_profile')  # Redirect to profile page after deleting address    
+
+
+
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        phone_number = request.POST.get('phone_number')
+        profile_photo = request.FILES.get('profile_photo')  # Get the uploaded image
+
+        
+        # Update the logged-in user's profile
+        user = request.user
+        user.username = username
+        user.phone_number = phone_number  # Ensure your user model includes this field
+        if profile_photo:
+            user.profile_photo = profile_photo
+        
+        user.save()
+
+        user.save()
+
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('user_profile')
     
+    return render(request, 'profile.html', {'user': request.user})
+
+
+@login_required
+def manage_address(request, address_id=None):
+    # Retrieve the address instance if address_id is provided; otherwise, create a new form instance
+    if address_id:
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        form = AddressForm(instance=address)  # Pre-fill the form with existing address data
+    else:
+        address = None
+        form = AddressForm()  # Empty form for creating a new address
+
+    if request.method == 'POST':
+        form = AddressForm(request.POST, instance=address)  # Bind the form with POST data
+        if form.is_valid():
+            form.save()  # Save the address (either update or create)
+            messages.success(request, "Address updated successfully!" if address else "Address added successfully!")
+            return redirect('user_profile')  # Adjust the redirect URL as per your application
+
+    context = {'form': form, 'address': address}
+    return render(request, 'manage_address.html', context)

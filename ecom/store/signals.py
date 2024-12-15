@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from .models import OtpToken
 from django.core.mail import send_mail
 from django.utils import timezone
-
+from allauth.socialaccount.models import SocialAccount
  
  
 @receiver(post_save, sender=settings.AUTH_USER_MODEL) 
@@ -14,6 +14,12 @@ def create_token(sender, instance, created, **kwargs):
             pass
         
         else:
+
+            if SocialAccount.objects.filter(user=instance).exists():
+                # Skip OTP generation for users using social accounts
+                return
+            
+
             OtpToken.objects.create(user=instance, otp_expires_at=timezone.now() + timezone.timedelta(minutes=5))
             instance.is_active=False 
             instance.save()

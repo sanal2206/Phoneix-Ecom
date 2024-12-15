@@ -15,11 +15,14 @@ urlpatterns = [
     path('product/<int:pk>',views.product,name='product'),
     path('category/<str:cat>',views.category,name='category'),
 
-#     #Profile
-#     path('profile/', views.profile_view, name='profile'),
-#     path('add-address/', views.add_address, name='add_address'),
-#     path('edit-address/<int:address_id>/', views.edit_address, name='edit_address'),
-#     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
+    #Profile
+    path('profile/', views.user_profile, name='user_profile'),
+    path('add-address/', views.add_address, name='add_address'),
+     path('manage-address/', views.manage_address, name='add_address'),
+     path('manage-address/<int:address_id>/', views.manage_address, name='edit_address'),
+     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
+    path('update-profile/', views.update_profile, name='update_profile'),
+
       
     #passoword reset
      

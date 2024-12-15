@@ -6,7 +6,10 @@ import datetime
 from django_resized import ResizedImageField 
 from django.conf import settings
 import secrets
- 
+from django.contrib.auth import get_user_model 
+from django.core.validators import RegexValidator
+from django_countries.fields import CountryField
+from image_cropping import ImageCropField, ImageRatioField
 # Category of products
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -22,10 +25,12 @@ class Category(models.Model):
 
 
 # Users
-class CustomUser(AbstractUser):        
-    # Add custom fields here    
+class CustomUser(AbstractUser):      
+    # Add custom fields here  
+
+    profile_photo = ImageCropField(upload_to='profile_photos/', null=True, blank=True)
+  
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    address = models.TextField(blank=True,null=True)
     email = models.EmailField(unique=True)
    
     verification_method = models.CharField(
@@ -40,7 +45,30 @@ class CustomUser(AbstractUser):
 
     def _str__(self):
         return self.email
-       
+
+
+User = get_user_model() # get the active user detils  
+
+class Address(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE,related_name='addresses')
+    address_line_1=models.CharField(max_length=255)
+    address_line_2=models.CharField(max_length=255,blank=True)
+    city=models.CharField(max_length=100)
+    state=models.CharField(max_length=100)
+    postal_code = models.CharField(
+        max_length=20,
+        validators=[
+            RegexValidator(r'^[0-9A-Za-z]+$', 'Enter a valid postal code.')
+        ]
+    )
+    country = models.CharField(max_length=100)
+
+
+    def __str__(self):
+        return f"{self.address_line_1}, {self.city}, {self.country}"
+    
+
+    
 
 class OtpToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="otps")

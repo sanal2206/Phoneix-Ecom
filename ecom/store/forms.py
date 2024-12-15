@@ -2,8 +2,8 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from django import forms
-from .models import Review
-
+from .models import Review,Address
+from image_cropping import ImageCropWidget
 
 
 class SignUpForm(UserCreationForm):
@@ -48,3 +48,52 @@ class ReviewForm(forms.ModelForm):
         if rating < 1 or rating > 5:
             raise forms.ValidationError("Rating must be between 1 and 5")
         return rating
+    
+
+
+# class AddressForm(forms.ModelForm):
+#     class Meta:
+#         model = Address
+#         fields = ['address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country']
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = ['address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country']
+
+        # Adding custom widgets to style the form fields
+        widgets = {
+            'address_line_1': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your address line 1'
+            }),
+            'address_line_2': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your address line 2 (optional)',
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your city'
+            }),
+            'state': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your state'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your postal code'
+            }),
+            'country': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Select your country'
+            }),
+        }
+
+User = get_user_model()
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model =User 
+        fields = ['profile_photo','first_name', 'last_name', 'email', 'phone_number']
+        widgets = {
+            'profile_photo': ImageCropWidget(),
+        }

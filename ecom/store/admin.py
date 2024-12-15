@@ -57,7 +57,7 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     """Admin configuration for CustomUser."""
-    list_display = ('username', 'email', 'is_staff', 'is_active', 'is_superuser_label')
+    list_display = ('username','profile_photo', 'email', 'is_staff', 'is_active', 'is_superuser_label')
     search_fields = ('username', 'email')
     list_filter = ('is_staff', 'is_active', 'is_superuser', 'last_login')
 
