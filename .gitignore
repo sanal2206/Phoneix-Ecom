@@ -5,7 +5,8 @@ venv/
 
 
 #remove in final push by making changes to
-ecom/settings.py
+ecom/ecom/settings.py
+
 
 # Ignore Python bytecode files
 *.pyc
