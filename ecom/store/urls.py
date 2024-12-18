@@ -22,19 +22,30 @@ urlpatterns = [
     path('profile/', views.user_profile, name='user_profile'),
     path('add-address/', views.add_address, name='add_address'),
     path('manage-address/', views.manage_address, name='add_address'),
-    path('manage-address/<int:address_id>/', views.manage_address, name='edit_address'),
+    path('manage-address-profile/<int:address_id>/', views.manage_address_profile, name='manage_address_profile'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
     path('update-profile/', views.update_profile, name='update_profile'),
 
-      
-     #cart
-     path('cart/', views.view_cart, name='view_cart'),
-     re_path(r'^add-to-cart/(?P<product_id>\d+)/(?P<variant_id>[\w-]+)/$', views.add_to_cart, name='add_to_cart'),
 
-     # path('add-to-cart/<int:product_id>/<int:variant_id>/', views.add_to_cart, name='add_to_cart'),
-
+      #cart
      path('cart/remove/<int:cart_id>/', views.remove_from_cart, name='remove_from_cart'),
      path('update-cart/<int:item_id>/', views.update_cart_quantity, name='update_cart_quantity'),
+     path('cart/', views.view_cart, name='view_cart'),
+     re_path(r'^add-to-cart/(?P<product_id>\d+)/(?P<variant_id>[\w-]+)/$', views.add_to_cart, name='add_to_cart'),
+     # path('add-to-cart/<int:product_id>/<int:variant_id>/', views.add_to_cart, name='add_to_cart'),
+
+
+
+      #checkout
+     path('checkout/', views.checkout, name='checkout'),  # URL for the checkout page
+     path('manage-address-checkout/<int:address_id>/', views.manage_address_checkout, name='manage_address_checkout'), 
+     path('add-address-checkout/', views.add_address_checkout, name='add_address_checkout'),
+
+ 
+
+      
+
+   
 
     #passoword reset
      

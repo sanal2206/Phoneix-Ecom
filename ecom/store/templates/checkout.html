@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    
+    <h1 class="text-center mb-5"><strong>Checkout Page</strong></h1>
+
+    
+    <div class="row">
+        <!-- Cart Summary Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Your Cart</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for item in cart_items %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ item.variant.product.name }}</h6>
+                                <small class="text-muted">
+                                    {{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB
+                                </small>
+                            </div>
+                            <div>
+                                <span class="text-muted">x {{ item.quantity }}</span>
+                                <strong class="d-block">${{ item.total_price }}</strong>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <p class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span>${{ subtotal|floatformat:2 }}</span>
+                    </p>
+                    <p class="d-flex justify-content-between">
+                        <span>Discount:</span>
+                        <span>-${{ discount_total|floatformat:2 }}</span>
+
+                    </p>
+                    <p class="d-flex justify-content-between">
+                        <span>Shipping:</span>
+                        <span>$5.00</span>
+                    </p>
+                    <hr>
+                    <h5 class="d-flex justify-content-between">
+                        <span>Total:</span>
+                        <strong>${{ total|floatformat:2 }}</strong>
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Select Address</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for address in addresses %}
+                        <div class="form-check mb-2 ">
+                            <input 
+                                class="form-check-input" 
+                                type="radio" 
+                                name="address_id" 
+                                value="{{ address.id }}" 
+                                id="address-{{ address.id }}" 
+                                required>
+                            <label class="form-check-label" for="address-{{ address.id }}">
+                                {{ address.address_line_1 }}, {{ address.city }}<br>
+                                <a href="{% url 'manage_address_checkout' address.id %}" class="text-decoration-none text-primary "><p style='font-size:17px;color:blue;'>EDIT<p></a>
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <a href="{% url 'add_address_checkout' %}" class="btn btn-success w-100 mt-3" style='background:green;' >Add new address</a>
+
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Place Order</button>
+                    
+
+                    </form>
+                </div>
+            </div>
+ 
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -30,6 +30,10 @@
                         <div class="card h-100">
                             <!-- Product image-->
                             <img class="card-img-top" src="{{ product.thumbnail.url }}" alt="..." />
+                            {% if product.is_featured %}
+                            <!-- Featured label positioned at the corner -->
+                            <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
+                             {% endif %}
                             <!-- Product details-->
                             <div class="card-body p-4">
                                 <div class="text-center">
@@ -51,7 +55,10 @@
                                         {% endfor %}
                                     </div>
                                     
-                                    
+                                    {% if product.discount > 0 %}
+                                    <!-- Discount label -->
+                                    <span class="badge bg-danger text-white">Discount-{{ product.discount }}%</span>
+                                    {% endif %}<br>
                                     <!-- Product price-->
                                     ${{ product.price }}
                                     

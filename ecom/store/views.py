@@ -363,7 +363,7 @@ def update_profile(request):
 
 
 @login_required
-def manage_address(request, address_id=None):
+def manage_address_profile(request, address_id=None):
     # Retrieve the address instance if address_id is provided; otherwise, create a new form instance
     if address_id:
         address = get_object_or_404(Address, id=address_id, user=request.user)
@@ -380,7 +380,7 @@ def manage_address(request, address_id=None):
             return redirect('user_profile')  # Adjust the redirect URL as per your application
 
     context = {'form': form, 'address': address}
-    return render(request, 'manage_address.html', context)
+    return render(request, 'manage_address_profile.html', context)
 
 
 #cart
@@ -497,3 +497,95 @@ def update_cart_quantity(request, item_id):
 
 
  
+
+
+#check_out view
+@login_required
+def checkout(request):
+    cart_items = Cart.objects.filter(user=request.user)
+    if not cart_items.exists():
+        messages.error(request, "Your cart is empty. Please add items before checkout.")
+        return redirect('cart')
+    
+    # Reuse calculations from view_cart
+    subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
+    discount_total = sum(
+        (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
+        for item in cart_items if item.variant.product.discount > 0
+    )
+    shipping_cost = Decimal('5.00')
+    total = subtotal - discount_total + shipping_cost
+
+    addresses = Address.objects.filter(user=request.user)
+
+    if request.method == 'POST':
+        selected_address_id = request.POST.get('address_id')
+        if selected_address_id:
+            address = get_object_or_404(Address, id=selected_address_id, user=request.user)
+            return redirect('place_order_from_cart', address_id=address.id)
+        else:
+            address_form = AddressForm(request.POST)
+            if address_form.is_valid():
+                address = address_form.save(commit=False)
+                address.user = request.user
+                address.save()
+                return redirect('place_order_from_cart', address_id=address.id)
+
+    return render(request, 'checkout.html', {
+        'cart_items': cart_items,
+        'addresses': addresses,
+        'address_form': AddressForm(),
+        'subtotal': subtotal,
+        'discount_total': discount_total,
+        'total': total,
+    })
+
+
+@login_required
+def manage_address(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user  # Set the user to the logged-in user
+            address.save()  # Save the address
+            return redirect('checkout')  # Redirect after saving
+    else:
+        form = AddressForm()
+
+    return render(request, 'manage_address.html', {'form': form})
+
+
+  
+@login_required
+def manage_address_checkout(request, address_id=None):
+    # Retrieve the address instance if address_id is provided; otherwise, create a new form instance
+    if address_id:
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        form = AddressForm(instance=address)  # Pre-fill the form with existing address data
+    else:
+        address = None
+        form = AddressForm()  # Empty form for creating a new address
+
+    if request.method == 'POST':
+        form = AddressForm(request.POST, instance=address)  # Bind the form with POST data
+        if form.is_valid():
+            form.save()  # Save the address (either update or create)
+            messages.success(request, "Address updated successfully!" if address else "Address added successfully!")
+            return redirect('checkout')  # Adjust the redirect URL as per your application
+
+    context = {'form': form, 'address': address}
+    return render(request, 'manage_address_checkout.html', context)
+
+@login_required
+def add_address_checkout(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            return redirect('checkout')  # Redirect to profile page after adding address
+    else:
+        form = AddressForm()
+    return render(request, 'manage_address_checkout.html', {'form': form})

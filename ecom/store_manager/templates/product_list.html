@@ -166,6 +166,7 @@
                         </span>
                     </td>
                     <td>
+                         
                         <a href="{% url 'admin_edit_product' product.id %}" class="action-btn">Edit Product</a>
                         <form method="post" action="{% url 'admin_deactivate_product' product.id %}" style="display:inline;">
                             {% csrf_token %}
@@ -173,6 +174,7 @@
                                 {% if product.is_active %}Deactivate{% else %}Activate{% endif %}
                             </button>
                         </form>
+                        
                         <td>
                             <form method="post" action="{% url 'soft_delete_product' product.id %}" style="display:inline;">
                                 {% csrf_token %}
