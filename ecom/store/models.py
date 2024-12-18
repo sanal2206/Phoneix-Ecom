@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django_countries.fields import CountryField
 from image_cropping import ImageCropField, ImageRatioField
+
 # Category of products
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -113,13 +114,21 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)  # For product stock
     is_active = models.BooleanField(default=True)  # For soft delete functionality
     is_deleted = models.BooleanField(default=False)  # Soft delete flag
+    created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
+    is_featured = models.BooleanField(default=False)  # Featured flag
+    discount = models.DecimalField(default=0, decimal_places=2, max_digits=10)  # Discount amount or percentage
+
 
    
     
     def __str__(self):
         return self.name
 
-  
+    def discounted_price(self):
+        """Returns the price after applying the discount percentage."""
+        if self.discount_percentage > 0:
+            return self.price - (self.price * (self.discount_percentage / 100))
+        return self.price
 
 # Product Images
 class ProductImage(models.Model):
@@ -173,3 +182,17 @@ class Review(models.Model):
 
 #     def __str__(self):
 #         return f"Order of {self.product.name} by {self.user.first_name} {self.user.last_name}"
+
+
+class Cart(models.Model):
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='cart_items')
+    variant=models.ForeignKey(Variant,on_delete=models.CASCADE,related_name='cart_items')
+    quantity=models.PositiveBigIntegerField(default=1)
+    added_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.variant} (Qty: {self.quantity})"
+
+    def total_price(self):
+        return self.variant.price * self.quantity
+

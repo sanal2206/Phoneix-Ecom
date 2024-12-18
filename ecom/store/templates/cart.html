@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+ 
+    {% include "navbar.html" %}
+
+
+    {% block content %} 
+
+        
+        <!-- Header-->
+        <header class="bg-dark py-5">
+            <div class="container px-4 px-lg-5 my-5">
+                <div class="text-center text-white">
+                    <h1 class="display-4 fw-bolder">Shop in with Phoneix</h1>
+                    <p class="lead fw-normal text-white-50 mb-0">Love your Phone with Phoneix</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="container py-5">
+            <h2 class="mb-4">Your Cart</h2>
+        
+            {% if cart_items %}
+            <div class="row">
+                <!-- Cart Table -->
+                <div class="col-lg-9">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Product</th>
+                                <th scope="col">Variant</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Discount</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart_items %}
+                            <tr>
+
+                                <td>{{ forloop.counter }}</td>
+                                <!-- Product Name -->
+                                {% comment %} <td>
+                                    <strong>{{ item.variant.product.name }}</strong><br>
+                                    <small class="text-muted">ID: {{ item.variant.product.id }}</small>
+                                </td>
+         {% endcomment %}
+
+                                <td>
+                                    <strong>
+                                        <a href="{% url 'product' item.variant.product.id %}" class="text-primary" style='font-size:20px'>
+                                            {{ item.variant.product.name }}
+                                        </a>
+                                    </strong><br>
+                                    {% comment %} <small class="text-muted">ID: {{ item.variant.product.id }}</small> {% endcomment %}
+                                </td>
+                                                        <!-- Variant Details -->
+                                <td>
+                                    <span class="text-capitalize">{{ item.variant.colour.colour }}</span>, 
+                                    {{ item.variant.storage.capacity }}GB
+                                </td>
+        
+                                <!-- Quantity -->
+                                <td>
+                                    <form method="post" action="{% url 'update_cart_quantity' item.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.variant.stock }}" class="form-control w-50 d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary" style='width:100px'>Update</button>
+                                    </form>
+                                </td>
+        
+                                <!-- Price -->
+                             
+        
+                                <!-- Total Price -->
+                                <td>${{ item.variant.price }}</td>
+                                {% if item.variant.product.discount > 0 %}
+                                <td>{{ item.variant.product.discount }}%</td>
+                                {% else %}
+                                    <td>No Discount</td>
+                                {% endif %}
+
+                                <td>${{ item.total_price }}</td>
+        
+                                <!-- Actions -->
+                                <td>
+                                    <form method="post" action="{% url 'remove_from_cart' item.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" style='width:100px'>Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+        
+                <!-- Cart Summary -->
+                <div class="col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Order Summary</h5>
+                            <hr>
+                            <p class="d-flex justify-content-between">
+                                <span>Subtotal:</span>
+                                <span>${{ subtotal }}</span>
+                            </p>
+                            <p class="d-flex justify-content-between">
+                                <span>Discount:</span>
+                                <span>${{ discount_total|floatformat:2 }}</span>
+                            </p>
+                            <p class="d-flex justify-content-between">
+                                <span>Shipping:</span>
+                                <span>$5.00</span>
+                            </p>
+                            <hr>
+                            <p class="d-flex justify-content-between">
+                                <strong>Total:</strong>
+                                <strong>${{ total }}</strong>
+                            </p>
+                            <a href="" class="btn btn-primary w-100">Proceed to Checkout</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% else %}
+            <!-- Empty Cart -->
+            <div class="text-center py-5">
+                <h4>Your cart is empty.</h4>
+                <a href="{% url 'product_list' %}" class="btn btn-outline-dark mt-3">Continue Shopping</a>
+            </div>
+            {% endif %}
+        </div>
+        
+
+ 
+        {% endblock content %}

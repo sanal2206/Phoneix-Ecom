@@ -6,7 +6,7 @@ from store.models import Product, ProductImage,Variant,Storage,Colour,Category
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'brand', 'category', 'description', 'thumbnail', 'stock', 'is_active']
+        fields = ['name', 'price', 'brand', 'category', 'description', 'thumbnail', 'stock', 'is_active','is_featured', 'discount']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -15,6 +15,8 @@ class ProductForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'thumbnail': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'is_featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),  # Checkbox for featured
+            'discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter discount percentage'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 

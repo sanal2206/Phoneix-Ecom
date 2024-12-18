@@ -2,20 +2,6 @@
 
 {% block content %}
  
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phoneix</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-</head>
-
-<body>
  
 
     <!-- Single Products -->
@@ -25,6 +11,10 @@
                 <div class="zoom-container">
 
                 <img src="{{ products.thumbnail.url }}" width="100%" id="ProductImg" class="thumbnail-img">
+                {% if products.is_featured %}
+                            <!-- Featured label positioned at the corner -->
+                    <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
+                {% endif %}
                 </div>
                 <div class="small-img-row" >
                     {% for img in images %}
@@ -50,6 +40,9 @@
                 
                 <h4>Category: {{ products.category.name }}</h4>
                 <h4>Brand: {{ products.brand }}</h4>
+                <h4>Discount: {{ products.discount }} %</h4>
+                
+
                   
                     <p><strong>Average Rating:</strong> 
                         {% if avg_rating %}
@@ -65,27 +58,71 @@
                     </p>
                     Stock:
                     {% if products.stock > 0 %}
-                        {{ product.stock }} available
+                        {{ product.stock }}  <span class="text-success"> In Stock</span>
                     {% else %}
-                        Out of stock
+                    <span class="text-danger">Out of stock</span>
                     {% endif %}
 
                     <br>
                     
+                      <!-- Display Variants -->
                     <!-- Display Variants -->
-                    <h3>Select Variant</h3>
-                    <select id="variant-selector">
+                {% comment %} <h3>Select Variant</h3>
+                <select id="variant-selector">
+                    <option value="" data-price="{{ products.price }}" selected>Base Price</option>
+                    {% for variant in variants %}
+                    <option value="{{ variant.id }}" data-price="{{ variant.price }}">
+                        {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
+                    </option>
+                    {% endfor %}
+                </select> {% endcomment %}
+
+                <form method="POST" id="add-to-cart-form" action="{% url 'add_to_cart' products.id 0 %}">
+                    {% csrf_token %}
+                    
+                    <!-- Select variant -->
+                    <select id="variant-selector" name="variant_id" required>
                         <option value="" data-price="{{ products.price }}" selected>Base Price</option>
                         {% for variant in variants %}
-                        <option value="{{ variant.id }}" data-price="{{ variant.price }}">
-                            {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
-                        </option>
+                            <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
+                                {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
+                            </option>
                         {% endfor %}
                     </select>
-
-
-                <a href="" class="btn">Add To Cart</a>
-
+                
+                    <!-- Quantity input -->
+                    <input type="number" name="quantity" value="1" min="1" id="quantity" required>
+                 
+                
+                    <button type="submit" class="btn btn-outline-dark mt-auto">Add to Cart</button>
+                </form>
+                
+                <script>
+                    const variantSelector = document.getElementById('variant-selector');
+                    const productPrice = document.getElementById('product-price');
+                    const quantityInput = document.getElementById('quantity');
+                    const form = document.getElementById('add-to-cart-form');
+                
+                    // Update price based on selected variant
+                    variantSelector.addEventListener('change', function() {
+                        const selectedOption = variantSelector.options[variantSelector.selectedIndex];
+                        const price = selectedOption.getAttribute('data-price');
+                        productPrice.textContent = price;
+                
+                        // Update max quantity based on stock available for the selected variant
+                        const stock = selectedOption.getAttribute('data-stock');
+                        quantityInput.max = stock;
+                
+                        // Update form action dynamically based on the selected variant
+                        const selectedVariantId = variantSelector.value;
+                        if (selectedVariantId) {
+                            form.action = "{% url 'add_to_cart' products.id 'variant_id' %}".replace('variant_id', selectedVariantId);
+                        }
+                    });
+                </script>
+                
+                  
+               
                 <h5>Product Details <i class="fa fa-indent"></i></h5>
                 <br>
                 <p>{{ products.description }}</p>
@@ -160,7 +197,7 @@
         {% endfor %}
     </div>
 </div>
-
+{% comment %} 
 
     <!-- Footer -->
     <div class="footer">
@@ -201,7 +238,7 @@
             <hr>
             <p class="copyright">Copyright 2020 - Samwit Adhikary</p>
         </div>
-    </div>
+    </div> {% endcomment %}
 
     <!-- javascript -->
 
@@ -270,7 +307,5 @@
             productPrice.textContent = price;
         });
     </script>
-</body>
-
-</html>
+ 
 {% endblock content %}

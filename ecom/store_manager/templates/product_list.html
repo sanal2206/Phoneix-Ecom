@@ -130,6 +130,8 @@
                 <th>Brand</th>
                 <th>Category</th>
                 <th>Stock</th>
+                <th>Discount</th>
+                <th>Featured</th>
                 <th>Thumbnail</th>
                 <th>Product images</th>
                 <th>Status</th>
@@ -149,6 +151,8 @@
                     <td>{{ product.brand }}</td>
                     <td>{{ product.category.name }}</td>
                     <td>{{ product.stock }}</td>
+                    <td>{{ product.discount }}</td>
+                    <td>{{ product.is_featured }}</td>
                     <td><img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" style="max-width: 100px; height: auto;"></td>
                     <td>
                         <!-- Loop through each related image -->

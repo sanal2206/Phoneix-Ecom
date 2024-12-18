@@ -1,5 +1,5 @@
-from django.shortcuts import render,redirect,get_object_or_404
-from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address
+from django.shortcuts import render,redirect,get_object_or_404,HttpResponse
+from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address,Cart,Variant
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django .contrib.auth import authenticate,login,logout
@@ -13,18 +13,60 @@ from django.core.mail import send_mail
 
 # Create your views here.
 
-def home(request):
-    products=Product.objects.filter(is_active=True,is_deleted=False)
+# def home(request):
+#     products=Product.objects.filter(is_active=True,is_deleted=False)
      
+#     # Calculate the average rating for each product
+#     for product in products:
+#         avg_rating = product.reviews.aggregate(Avg('rating'))['rating__avg']
+#         product.avg_rating = round(avg_rating, 1) if avg_rating else 0
+#         product.stars_range = range(1, 6)  # Create a range from 1 to 5 for stars
+
+#     return render(request,'home.html',{'products':products })
+
+def home(request):
+    # Get the filter and sorting values from the GET request
+    search_query = request.GET.get('q', '')
+    show_out_of_stock = request.GET.get('show_out_of_stock', 'no')
+    sort_by = request.GET.get('sort_by', 'name_asc')
+
+    # Start with the basic query, filtering only active and non-deleted products
+    products = Product.objects.filter(is_active=True, is_deleted=False)
+
+    # Filter by search query if provided
+    if search_query:
+        products = products.filter(name__icontains=search_query)
+
+    # Filter by stock availability
+    if show_out_of_stock == 'no':
+        products = products.filter(stock__gt=0)  # Assuming 'stock' is the field for product quantity
+
+    # Sort products based on selected option
+    if sort_by == 'name_asc':
+        products = products.order_by('name')
+    elif sort_by == 'name_desc':
+        products = products.order_by('-name')
+    elif sort_by == 'price_low_high':
+        products = products.order_by('price')
+    elif sort_by == 'price_high_low':
+        products = products.order_by('-price')
+    elif sort_by == 'new_arrivals':
+        products = products.order_by('-created_at')  # Assuming 'created_at' is the date of creation
+    elif sort_by == 'featured':
+        products = products.filter(is_featured=True)  # Assuming 'is_featured' is a boolean field for featured products
+
     # Calculate the average rating for each product
     for product in products:
         avg_rating = product.reviews.aggregate(Avg('rating'))['rating__avg']
         product.avg_rating = round(avg_rating, 1) if avg_rating else 0
         product.stars_range = range(1, 6)  # Create a range from 1 to 5 for stars
 
-    return render(request,'home.html',{'products':products })
-
-
+    return render(request, 'home.html', {
+        'products': products,
+        'search_query': search_query,
+        'show_out_of_stock': show_out_of_stock,
+        'sort_by': sort_by
+    })
 
 
 
@@ -173,30 +215,28 @@ def resend_otp(request):
     context = {}
     return render(request, "resend_otp.html", context)
 
-
-# @login_required
+@login_required
 def product(request, pk):
     # Get the product by primary key (id)
-    products = get_object_or_404(Product, id=pk, is_active=True,is_deleted=False)
+    products = get_object_or_404(Product, id=pk, is_active=True, is_deleted=False)
     
     # Fetch images for the product
     images = ProductImage.objects.filter(product=products)
-
-
-    # variants = products.variants.all() 
-    variants = products.variants.filter(is_active=True)
-     
-    # Get related products (same category but excluding the current product)
-    related_products = Product.objects.filter(category=products.category,is_active=True).exclude(pk=pk)[:4]  # Show up to 4 related products
     
-
+    # Fetch active variants for the product
+    variants = products.variants.filter(is_active=True)
+    print(f"Product ID: {products.id}")
+    for variant in variants:
+        print(f"Variant ID: {variant.id}")
+    
+    
+    # Get related products (same category but excluding the current product)
+    related_products = Product.objects.filter(category=products.category, is_active=True).exclude(pk=pk)[:4]  # Show up to 4 related products
+    
     # Calculate the average rating for the product
     avg_rating = products.reviews.aggregate(Avg('rating'))['rating__avg']  # Get the average rating
     avg_rating = round(avg_rating, 1) if avg_rating else 0  # Round to 1 decimal place, default to 0 if no reviews
-
     
-     
-
     # Fetch reviews for the product
     reviews = products.reviews.all()  # Access the reviews related to the product
     
@@ -220,13 +260,11 @@ def product(request, pk):
         'reviews': reviews,
         'form': form,  # Include the form for adding reviews
         'avg_rating': avg_rating,  # Pass the average rating to the template
-        'variants':variants
-         
+        'variants': variants  # Include the product variants
     }
 
     return render(request, 'product.html', context)
 
- 
 
 def category(request, cat):
   
@@ -343,3 +381,119 @@ def manage_address(request, address_id=None):
 
     context = {'form': form, 'address': address}
     return render(request, 'manage_address.html', context)
+
+
+#cart
+
+def add_to_cart(request, product_id, variant_id):
+    product = get_object_or_404(Product, id=product_id)
+    variant = get_object_or_404(Variant, id=variant_id)
+
+    # Get the quantity from the form
+    quantity = int(request.POST.get('quantity', 1))
+
+    # Check if the requested quantity exceeds available stock
+    if quantity > variant.stock:
+        messages.error(request, f"Sorry, we only have {variant.stock} units of this variant in stock.")
+        return redirect('product', pk=product.id)  # Redirect back to product page
+
+    # Limit the maximum quantity per user (e.g., 5 per product/variant)
+    max_quantity = 5
+
+    # Retrieve the cart item for the user and variant, if it exists
+    cart_item, created = Cart.objects.get_or_create(
+        user=request.user,
+        variant=variant,
+        defaults={'quantity': 0}  # Default quantity is 0 for new items
+    )
+
+    # Calculate the total quantity if the current quantity is added
+    total_quantity = cart_item.quantity + quantity
+
+    # Ensure the total quantity does not exceed the maximum allowed limit
+    if total_quantity > max_quantity:
+        allowed_quantity = max_quantity - cart_item.quantity
+        messages.error(
+            request,
+            f"You can only add {allowed_quantity} more units of this product to your cart. "
+            f"The maximum allowed is {max_quantity}."
+        )
+        return redirect('product', pk=product.id)
+
+    # Ensure the total quantity does not exceed the stock
+    if total_quantity > variant.stock:
+        allowed_stock = variant.stock - cart_item.quantity
+        messages.error(
+            request,
+            f"Sorry, you can only add {allowed_stock} more units of this variant. "
+            f"We have {variant.stock} units in stock."
+        )
+        return redirect('product', pk=product.id)
+
+    # Update the cart item quantity or create a new entry
+    cart_item.quantity = total_quantity
+    cart_item.save()
+
+    # Success message
+    messages.success(request, "Item added to your cart successfully!")
+    return redirect('view_cart')  # Redirect to the cart page
+
+
+
+from decimal import Decimal
+
+def view_cart(request):
+    cart_items = Cart.objects.filter(user=request.user)
+
+    # Calculate subtotal (price without discount) and discount total
+    subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
+    discount_total = sum(
+        (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
+        for item in cart_items if item.variant.product.discount > 0
+    )
+
+    # Convert shipping cost to Decimal
+    shipping_cost = Decimal('5.00')
+
+    # Calculate final total (subtotal - discount + shipping)
+    total = subtotal - discount_total + shipping_cost
+
+    return render(request, 'cart.html', {
+        'cart_items': cart_items,
+        'subtotal': subtotal,
+        'discount_total': discount_total,
+        'total': total,
+    })
+
+
+
+def remove_from_cart(request, cart_id):
+    cart_item = get_object_or_404(Cart, id=cart_id, user=request.user)
+    cart_item.delete()
+    messages.success(request, "Item removed from your cart.")
+    return redirect('view_cart')
+
+
+
+
+def update_cart_quantity(request, item_id):
+    if request.method == 'POST':
+        cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
+        quantity = int(request.POST.get('quantity', 1))
+
+        if quantity > cart_item.variant.stock:
+            messages.error(request, f"Only {cart_item.variant.stock} units available in stock.")
+        elif quantity>5:
+                messages.error(request, "Your are allowed to add  max 5 items to the cart.")
+
+        elif quantity < 1:
+            messages.error(request, "Quantity must be at least 1.")
+        else:
+            cart_item.quantity = quantity
+            cart_item.save()
+            messages.success(request, "Cart updated successfully.")
+
+    return redirect('view_cart')
+
+
+ 

@@ -11,8 +11,52 @@
         <header class="bg-dark py-5">
             <div class="container px-4 px-lg-5 my-5">
                 <div class="text-center text-white">
-                    <h1 class="display-4 fw-bolder">Shop in with Phoneix</h1>
-                    <p class="lead fw-normal text-white-50 mb-0">Love your Phone with Phoneix</p>
+                     
+
+                    
+                    <form method="GET" action="" class="row g-3 align-items-center justify-content-between">
+                        <!-- Search Bar -->
+                        <div class="col-md-4" >
+                            <input
+                                type="text"
+                                name="q"
+                                class="form-control"
+                                placeholder="Search products..."
+                                value="{{ search_query }}">
+                        </div>
+                    
+                        <!-- Stock Filter -->
+                        <div class="col-md-2">
+                            <select name="show_out_of_stock" class="form-select">
+                                <option value="yes" {% if show_out_of_stock == "yes" %}selected{% endif %}>Show Out of Stock</option>
+                                <option value="no" {% if show_out_of_stock == "no" %}selected{% endif %}>Hide Out of Stock</option>
+                            </select>
+                        </div>
+                    
+                        <!-- Sorting Options -->
+                        <div class="col-md-2">
+                            <select name="sort_by" class="form-select">
+                                <option value="name_asc" {% if sort_by == "name_asc" %}selected{% endif %}>Name: A-Z</option>
+                                <option value="name_desc" {% if sort_by == "name_desc" %}selected{% endif %}>Name: Z-A</option>
+                                <option value="price_low_high" {% if sort_by == "price_low_high" %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_high_low" {% if sort_by == "price_high_low" %}selected{% endif %}>Price: High to Low</option>
+                                <option value="new_arrivals" {% if sort_by == "new_arrivals" %}selected{% endif %}>New Arrivals</option>
+                                <option value="featured" {% if sort_by == "featured" %}selected{% endif %}>Featured</option>
+                            </select>
+                        </div>
+                    
+                        <!-- Submit Button -->
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary">Apply</button>
+                        </div>
+
+                         <!-- Clear Filters Button -->
+                        <div class="col-md-2">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">Clear Filters</a>
+                        </div>
+                    </form>
+
+
                 </div>
             </div>
         </header>
@@ -30,6 +74,11 @@
                         <div class="card h-100">
                             <!-- Product image-->
                             <img class="card-img-top" src="{{ product.thumbnail.url }}" alt="..." />
+                            {% if product.is_featured %}
+                            <!-- Featured label positioned at the corner -->
+                            <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
+                             {% endif %}
+                            
                             <!-- Product details-->
                             <div class="card-body p-4">
                                 <div class="text-center">
@@ -52,6 +101,11 @@
                                     
                                     <!-- Product price-->
                                     Price: ${{ product.price }}<br>
+                                    {% if product.discount > 0 %}
+                                    <!-- Discount label -->
+                                    <span class="badge bg-danger text-white">Discount-{{ product.discount }}%</span>
+                                    {% endif %}
+                                    <br>
                                     Brand: {{ product.brand }}
                                     
                                 </div>
@@ -67,5 +121,8 @@
                 </div>  
             </div>          
         </section>
+
+
+        
          
         {% endblock content %}
