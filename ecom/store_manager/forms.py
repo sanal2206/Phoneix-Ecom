@@ -25,6 +25,18 @@ class ProductForm(forms.ModelForm):
         # Filter only active categories
         self.fields['category'].queryset = Category.objects.filter(is_active=True)
 
+ 
+
+class ColourForm(forms.ModelForm):
+    class Meta:
+        model=Colour
+        fields=['colour']
+
+class StorageForm(forms.ModelForm):
+    class Meta:
+        model=Storage
+        fields=['capacity','is_active']
+
             
 class ProductImageForm(forms.ModelForm):
     class Meta:
@@ -39,21 +51,10 @@ ProductImageFormSet = forms.modelformset_factory(
      
 )
 
-class ColourForm(forms.ModelForm):
-    class Meta:
-        model=Colour
-        fields=['colour']
-
-class StorageForm(forms.ModelForm):
-    class Meta:
-        model=Storage
-        fields=['capacity','is_active']
-
-
 class VariantForm(forms.ModelForm):
     class Meta:
         model = Variant
-        fields = ['product', 'colour', 'storage', 'price', 'stock', 'is_active']
+        fields = ['product', 'colour', 'storage', 'price', 'stock','is_active']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-control'}),
             'colour': forms.Select(attrs={'class': 'form-control', 'placeholder': 'Select colour'}),  # Using Select widget
@@ -62,6 +63,8 @@ class VariantForm(forms.ModelForm):
             'stock': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter stock quantity'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+ 
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
@@ -84,7 +87,8 @@ class VariantForm(forms.ModelForm):
             'class': 'form-control',
             'placeholder': 'Select storage',
         })
-    
+ 
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model=Category

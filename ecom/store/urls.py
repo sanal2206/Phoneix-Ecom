@@ -42,10 +42,12 @@ urlpatterns = [
      path('add-address-checkout/', views.add_address_checkout, name='add_address_checkout'),
 
  
+     path('place_order_from_cart/<int:address_id>/', views.place_order_from_cart, name='place_order_from_cart'),
+    path('order_confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
 
-      
+       path('orders/', views.order_list, name='order_list'),
+    path('cancel_order/<int:order_id>/', views.cancel_order, name='cancel_order'),
 
-   
 
     #passoword reset
      

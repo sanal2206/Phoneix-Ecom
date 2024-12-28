@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<!-- Header-->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Page</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Order List</p>
+        </div>
+    </div>
+</header> 
+
+{% if user.is_superuser %}
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Manage Orders</strong></h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Order List</h4>
+        </div>
+
+        <div class="card-body">
+            {% if orders %}
+                <ul class="list-group">
+                    {% for order in orders %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="order-details">
+                            <h6 class="mb-1">Order #{{ order.id }}</h6>
+                            <p class="mb-1 small text-muted">
+                                Customer: <strong>{{ order.user.email }}</strong><br>
+                                Status: <strong>{{ order.status }}</strong>
+                            </p>
+                        </div>
+
+                        <div class="order-actions text-end">
+                            <strong class="d-block mb-2">${{ order.total_price|floatformat:2 }}</strong>
+                            <a href="{% url 'store_manager_order_detail' order.id %}" class="btn btn-info btn-sm mb-2">View Details</a>
+                            <form method="post" action="{% url 'store_manager_orders' %}" class="d-inline-block">
+                                {% csrf_token %}
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <div class="input-group mb-2">
+                                    <select name="new_status" class="form-select form-select-sm">
+                                        <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                                        <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                </div>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted text-center">No orders found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock %}

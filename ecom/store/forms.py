@@ -50,11 +50,7 @@ class ReviewForm(forms.ModelForm):
         return rating
     
 
-
-# class AddressForm(forms.ModelForm):
-#     class Meta:
-#         model = Address
-#         fields = ['address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country']
+ 
 
 class AddressForm(forms.ModelForm):
     class Meta:

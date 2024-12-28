@@ -125,7 +125,7 @@
             <tr>
                 <th>#</th> <!-- Serial Number Column -->
 
-                <th>Name</th>
+                <th >Name</th>
                 <th>Price</th>
                 <th>Brand</th>
                 <th>Category</th>
@@ -133,7 +133,7 @@
                 <th>Discount</th>
                 <th>Featured</th>
                 <th>Thumbnail</th>
-                <th>Product images</th>
+                <th style='width:20px'>Product images</th>
                 <th>Status</th>
                 <th>Actions</th>
                 <th>Soft Delete</th>
@@ -167,7 +167,7 @@
                     </td>
                     <td>
                          
-                        <a href="{% url 'admin_edit_product' product.id %}" class="action-btn">Edit Product</a>
+                        <a href="{% url 'admin_edit_product' product.id %}" class="action-btn">Edit Product</a> 
                         <form method="post" action="{% url 'admin_deactivate_product' product.id %}" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="action-btn {% if product.is_active %}deactivate-btn{% endif %}">

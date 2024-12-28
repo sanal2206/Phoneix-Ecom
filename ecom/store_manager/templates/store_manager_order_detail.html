@@ -1,0 +1,60 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<!-- Header-->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Page</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Order Detail view</p>
+        </div>
+    </div>
+</header> 
+{% if user.is_superuser %}
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Order Details</strong></h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Order Summary</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Order ID:</strong> {{ order.id }}</p>
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+            <p><strong>Address:</strong> {{ order.address }}</p>
+            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Order Items</h4>
+        </div>
+        <div class="card-body">
+            {% if order.items.all %}
+                <ul class="list-group">
+                    {% for item in order.items.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ item.variant.product.name }}</h6>
+                            <small class="text-muted">
+                                {{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB
+                            </small>
+                        </div>
+                        <div>
+                            <span><strong>{{ item.quantity }}</strong> pcs</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No items found for this order.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<p>You are not authorized to view this form.</p>
+{% endif %}
+{% endblock %}

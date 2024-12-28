@@ -384,7 +384,7 @@ def manage_address_profile(request, address_id=None):
 
 
 #cart
-
+@login_required
 def add_to_cart(request, product_id, variant_id):
     product = get_object_or_404(Product, id=product_id)
     variant = get_object_or_404(Variant, id=variant_id)
@@ -589,3 +589,99 @@ def add_address_checkout(request):
     else:
         form = AddressForm()
     return render(request, 'manage_address_checkout.html', {'form': form})
+
+
+
+ 
+
+
+ 
+from decimal import Decimal
+from .models import Order,OrderItem
+@login_required
+def place_order_from_cart(request, address_id):
+    cart_items = Cart.objects.filter(user=request.user)
+    if not cart_items.exists():
+        messages.error(request, "Your cart is empty. Please add items before checkout.")
+        return redirect('cart')
+
+    # Reuse calculations from the checkout view
+    subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
+    discount_total = sum(
+        (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
+        for item in cart_items if item.variant.product.discount > 0
+    )
+    shipping_cost = Decimal('5.00')
+    total = subtotal - discount_total + shipping_cost
+
+    # Create the order
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    order = Order.objects.create(
+        user=request.user,
+        address=address,
+        total_price=total,
+        payment_method=request.POST.get('payment_method', 'COD'),  # Default to COD if not specified
+    )
+
+    # Create OrderItems for each item in the cart
+    for item in cart_items:
+        OrderItem.objects.create(
+            order=order,
+            variant=item.variant,
+            quantity=item.quantity,
+            price=item.variant.price,
+        )
+
+
+        # Update the stock of the variant
+        item.variant.stock -= item.quantity  # Decrease stock by the quantity ordered
+        item.variant.save()  # Save the updated variant with the new stock level
+
+    # Clear the cart after placing the order (optional)
+
+    # Clear the cart after placing the order (optional)
+    cart_items.delete()
+
+    # Redirect to order confirmation page
+    return redirect('order_confirmation', order_id=order.id)
+
+
+@login_required
+def order_confirmation(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'order_confirmation.html', {
+        'order': order,
+        'items': order.items.all(),  # Get the related OrderItems
+    })
+
+
+@login_required
+def order_list(request):
+    # Retrieve all orders for the logged-in user
+    orders = request.user.orders.all().order_by('-created_at')  # Order by creation date, most recent first
+    
+    return render(request, 'order_list.html', {
+        'orders': orders,
+    })
+
+
+
+@login_required
+def cancel_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    if order.status != 'Cancelled':
+        # Update the order status to Cancelled
+        order.status = 'Cancelled'
+        order.save()
+
+        # Update stock for each item in the order
+        for item in order.items.all():  # This assumes that you have a related_name 'items' in OrderItem model
+            item.variant.stock += item.quantity  # Increase stock by the quantity ordered
+            item.variant.save()  # Save the updated stock
+
+        messages.success(request, "Your order has been cancelled and stock has been updated.")
+    else:
+        messages.error(request, "This order has already been cancelled.")
+
+    return redirect('order_list')  # Replace 'order_list' with your actual order list URL name

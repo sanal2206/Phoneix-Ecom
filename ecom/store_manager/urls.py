@@ -23,10 +23,13 @@ urlpatterns = [
     #edit
     path('edit/product/<int:product_id>/', views.edit_product, name='admin_edit_product'),
     path('edit_variant/<int:variant_id>/', views.edit_variant, name='edit_variant'),
+    path('delete_variant/<int:variant_id>/',views.delete_variant,name='delete_variant'),
 
     path('category/deactivate/<int:category_id>/', views.deactivate_category, name='deactivate_category'),
     path('category/activate/<int:category_id>/', views.activate_category, name='activate_category'),
 
+     path('orders/', views.store_manager_orders, name='store_manager_orders'),
+     path('store-manager/orders/<int:order_id>/', views.store_manager_order_detail, name='store_manager_order_detail'),
 
 
     #deactivate

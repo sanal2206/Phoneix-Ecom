@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.shortcuts import render
-from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage
+from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order
 from django.contrib.auth.views import LoginView
 from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm
 
@@ -27,12 +27,14 @@ def admin_dashboard(request):
     total_categories = Category.objects.count()  # Count of all categories
     total_products = Product.objects.count()  # Count of all products
     total_variants=Variant.objects.count()
+    total_orders=Order.objects.count()
      
     context = {
         'total_users': total_users,
         'total_categories': total_categories,
         'total_products': total_products,
-        'total_variants':total_variants
+        'total_variants':total_variants,
+        'total_orders':total_orders,
     }
          
     
@@ -202,16 +204,23 @@ def color_list(request):
     return render(request, 'color_list.html', {'colors': colors})
 
 
-def add_variant(request):
-    if request.method=='POST':
-        form=VariantForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('variant_list')
-    else:
-        form=VariantForm()
 
-    return render(request,'add_variant.html',{'form':form})        
+def add_variant(request):
+    if request.method == 'POST':
+        variant_form = VariantForm(request.POST)
+
+        if variant_form.is_valid():
+            # Save the new variant
+            variant = variant_form.save()
+            messages.success(request, "Variant created successfully!")
+            return redirect('variant_list')
+
+    else:
+        variant_form = VariantForm()
+
+    return render(request, 'add_variant.html', {
+        'variant_form': variant_form,
+    })    
 
 def variant_list(request):
     if request.method == 'POST':
@@ -335,3 +344,55 @@ def permanent_delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_deleted=True)
     product.delete()  # Permanently delete from the database
     return redirect('deleted_product_list')
+
+
+def delete_variant(request, variant_id):
+    # Retrieve the variant object safely
+    variant = get_object_or_404(Variant, id=variant_id)
+    variant.delete()  # Delete the object from the database
+
+    return redirect('variant_list')
+    
+
+ 
+
+ 
+def store_manager_orders(request):
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        new_status = request.POST.get('new_status')
+        try:
+            # Fetch the order
+            order = get_object_or_404(Order, id=order_id)
+
+            # Update the status
+            if new_status in dict(Order.STATUS_CHOICES):
+                order.status = new_status
+                order.save()
+
+                # Handle stock adjustment if order is canceled
+                if new_status == 'Cancelled':
+                    for item in order.items.all():
+                        item.variant.stock += item.quantity
+                        item.variant.save()
+
+                messages.success(request, f"Order #{order.id} status updated to {new_status}.")
+            else:
+                messages.error(request, "Invalid status provided.")
+        except Exception as e:
+            messages.error(request, f"Error updating order: {str(e)}")
+
+        return redirect('store_manager_orders')
+
+    # Fetch all orders for display
+    orders = Order.objects.all().order_by('-created_at')
+    return render(request, 'store_manager_orders.html', {'orders': orders})
+
+ 
+ 
+
+def store_manager_order_detail(request, order_id):
+    # Fetch the specific order
+    order = get_object_or_404(Order, id=order_id)
+
+    return render(request, 'store_manager_order_detail.html', {'order': order})

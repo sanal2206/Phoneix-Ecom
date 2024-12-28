@@ -147,6 +147,9 @@
                 <!-- Edit Button -->
                 <a href="{% url 'edit_variant' variant.id %}">
                     <button type="button" class="edit-btn">Edit</button>
+               
+                    <a href="{% url 'delete_variant' variant.id %}" onclick="return confirm('Are you sure you want to delete this variant?');">Delete</a>
+
                 </a>
             </td>
         </tr>

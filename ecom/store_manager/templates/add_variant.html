@@ -70,8 +70,12 @@
 
  <h1>Add a New Variant</h1>
     <form method="post">
+        
         {% csrf_token %}
-        {{ form.as_p }}
+        <h2>Variant Details</h2>
+        {{ variant_form.as_p }}
+
+           
         <button type="submit">Save</button>
     </form>
     <a href="{% url 'variant_list' %}">Back to Variants</a>
@@ -80,5 +84,6 @@
     <p>You are not authorized to view this form.</p>
     {% endif %}
 {% endblock content %}
+
 
  

@@ -1,10 +1,9 @@
+ 
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-5">
-    
     <h1 class="text-center mb-5"><strong>Checkout Page</strong></h1>
 
-    
     <div class="row">
         <!-- Cart Summary Section -->
         <div class="col-lg-8">
@@ -38,7 +37,6 @@
                     <p class="d-flex justify-content-between">
                         <span>Discount:</span>
                         <span>-${{ discount_total|floatformat:2 }}</span>
-
                     </p>
                     <p class="d-flex justify-content-between">
                         <span>Shipping:</span>
@@ -53,17 +51,19 @@
             </div>
         </div>
 
-        <!-- Address Section -->
+        <!-- Address and Payment Section -->
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Select Address</h4>
+                    <h4 class="mb-0">Select Address and Payment</h4>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        <!-- Address Selection -->
+                        <h5>Select Address</h5>
                         {% for address in addresses %}
-                        <div class="form-check mb-2 ">
+                        <div class="form-check mb-2">
                             <input 
                                 class="form-check-input" 
                                 type="radio" 
@@ -72,20 +72,45 @@
                                 id="address-{{ address.id }}" 
                                 required>
                             <label class="form-check-label" for="address-{{ address.id }}">
-                                {{ address.address_line_1 }}, {{ address.city }}<br>
-                                <a href="{% url 'manage_address_checkout' address.id %}" class="text-decoration-none text-primary "><p style='font-size:17px;color:blue;'>EDIT<p></a>
+                                {{ address.address_line_1 }} {{ address.address_line_2 }}, 
+                                {{ address.city }}, {{ address.state }} - {{ address.country }}
                             </label>
+                            <a href="{% url 'manage_address_checkout' address.id %}" class="text-decoration-none text-primary"><p style='font-size:17px;color:blue;'>EDIT</p></a>
                         </div>
                         {% endfor %}
-                        <a href="{% url 'add_address_checkout' %}" class="btn btn-success w-100 mt-3" style='background:green;' >Add new address</a>
+                        <a href="{% url 'add_address_checkout' %}" class="btn btn-success w-100 mt-3" style='background:green;'>Add new address</a>
 
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Place Order</button>
-                    
+                        <!-- Payment Option -->
+                        <h5 class="mt-4">Select Payment Method</h5>
+                        <div class="form-check mb-2">
+                            <input 
+                                class="form-check-input" 
+                                type="radio" 
+                                name="payment_method" 
+                                value="COD" 
+                                id="payment-cod" 
+                                required>
+                            <label class="form-check-label" for="payment-cod">
+                                Cash on Delivery (COD)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input 
+                                class="form-check-input" 
+                                type="radio" 
+                                name="payment_method" 
+                                value="Online" 
+                                id="payment-online" 
+                                required>
+                            <label class="form-check-label" for="payment-online">
+                                Online Payment
+                            </label>
+                        </div>
 
+                        <button type="submit" class="btn btn-primary w-100 mt-4">Place Order</button>
                     </form>
                 </div>
             </div>
- 
         </div>
     </div>
 </div>

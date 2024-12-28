@@ -66,23 +66,14 @@
                     <br>
                     
                       <!-- Display Variants -->
-                    <!-- Display Variants -->
-                {% comment %} <h3>Select Variant</h3>
-                <select id="variant-selector">
-                    <option value="" data-price="{{ products.price }}" selected>Base Price</option>
-                    {% for variant in variants %}
-                    <option value="{{ variant.id }}" data-price="{{ variant.price }}">
-                        {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
-                    </option>
-                    {% endfor %}
-                </select> {% endcomment %}
-
+      
+                
                 <form method="POST" id="add-to-cart-form" action="{% url 'add_to_cart' products.id 0 %}">
                     {% csrf_token %}
                     
                     <!-- Select variant -->
                     <select id="variant-selector" name="variant_id" required>
-                        <option value="" data-price="{{ products.price }}" selected>Base Price</option>
+                        <option value="" data-price="{{ products.price }}" selected>Select Variant</option>
                         {% for variant in variants %}
                             <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
                                 {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
@@ -90,9 +81,11 @@
                         {% endfor %}
                     </select>
                 
+                    <!-- Display Product Price -->
+                     
+                    
                     <!-- Quantity input -->
                     <input type="number" name="quantity" value="1" min="1" id="quantity" required>
-                 
                 
                     <button type="submit" class="btn btn-outline-dark mt-auto">Add to Cart</button>
                 </form>
@@ -113,15 +106,19 @@
                         const stock = selectedOption.getAttribute('data-stock');
                         quantityInput.max = stock;
                 
+                        // Convert product ID and selected variant ID to integers
+                        const productId = parseInt("{{ products.id }}", 10); // Convert product ID from template to integer
+                        const selectedVariantId = parseInt(variantSelector.value, 10); // Convert variant ID to integer
+                
                         // Update form action dynamically based on the selected variant
-                        const selectedVariantId = variantSelector.value;
                         if (selectedVariantId) {
-                            form.action = "{% url 'add_to_cart' products.id 'variant_id' %}".replace('variant_id', selectedVariantId);
+                            form.action = "{% url 'add_to_cart' 0 0 %}".replace('0', productId).replace('0', selectedVariantId);
+                        } else {
+                            form.action = "{% url 'add_to_cart' products.id 0 %}"; // Reset to base URL if no variant is selected
                         }
                     });
                 </script>
                 
-                  
                
                 <h5>Product Details <i class="fa fa-indent"></i></h5>
                 <br>
@@ -182,12 +179,15 @@
    <!-- Related Products -->
 <div class="small-container ">
     <h2>Related Products</h2>
-    <div class="row ">
+    <div class="row text-center">
+
         {% for related_product in related_products %}
             <div class="col-4 border">
                 <img src="{{ related_product.thumbnail.url }}" alt="{{ related_product.name }}">
-                <h>Model:{{ related_product.name }}</p>
-                <h>Price $:{{ related_product.price }}</p>
+            
+                <h5>Model:<strong>{{ related_product.name }}</strong></h5>
+                <h5>Price $:{{ related_product.price }}</h5>
+                    <h5>Discount:{{ related_product.discount }}%</h5>
            
 
                 <a href="{% url 'product' related_product.pk %}">View Details</a>

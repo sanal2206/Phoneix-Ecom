@@ -65,6 +65,7 @@ class Address(models.Model):
     country = models.CharField(max_length=100)
 
 
+
     def __str__(self):
         return f"{self.address_line_1}, {self.city}, {self.country}"
     
@@ -126,20 +127,18 @@ class Product(models.Model):
 
     def discounted_price(self):
         """Returns the price after applying the discount percentage."""
-        if self.discount_percentage > 0:
-            return self.price - (self.price * (self.discount_percentage / 100))
+        if self.discount> 0:
+            return self.price - (self.price * (self.discount / 100))
         return self.price
 
 # Product Images
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
     image = ResizedImageField(upload_to='uploads/product_images/',  size=[300, 250],crop=['middle', 'center'], force_format='JPEG')
- 
 
     
     def __str__(self):
         return f"Image for {self.product.name}"
-
  
 
 # Product Variants (Color and Storage)
@@ -155,6 +154,7 @@ class Variant(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.colour.colour}, {self.storage.capacity}GB"
 
+ 
 # Review
 class Review(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -170,19 +170,6 @@ class Review(models.Model):
         return f"Review by {self.user.first_name} for {self.product.name}"
 
 
-# #Customer Orders
-# class Order(models.Model):
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     quantity = models.IntegerField(default=1)
-#     address = models.CharField(max_length=200, default='', blank=True)
-#     phone = models.CharField(max_length=20, default='', blank=True)
-#     date = models.DateField(default=datetime.date.today)
-#     status = models.BooleanField(default=False)
-
-#     def __str__(self):
-#         return f"Order of {self.product.name} by {self.user.first_name} {self.user.last_name}"
-
 
 class Cart(models.Model):
     user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='cart_items')
@@ -196,3 +183,49 @@ class Cart(models.Model):
     def total_price(self):
         return self.variant.price * self.quantity
 
+
+#orders
+class Order(models.Model):
+    STATUS_CHOICES=[
+        ('Processing','Processing'),
+        ('Shipped','Shipped'),
+        ('Delivered','Delivered'),
+        ('Cancelled','Cancelled'),
+    ]
+
+
+    PAYMENT_CHOICES=[
+        ('COD','Cash on Delivery'),
+        ('Online','Online Payment')
+    ]
+
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='orders')
+    address=models.ForeignKey(Address,on_delete=models.SET_NULL,null=True,blank=True,related_name='address_orders')
+    status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='Processing')
+    payment_method=models.CharField(max_length=10,choices=PAYMENT_CHOICES,default='COD')
+    total_price=models.DecimalField(max_digits=10,decimal_places=2)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+
+
+    def __str__(self):
+        return f"Orders #{self.id} by {self.user.email} - {self.status}"
+    
+
+
+class OrderItem(models.Model):
+    order=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='items')
+    variant=models.ForeignKey(Variant,on_delete=models.CASCADE,related_name='order_items')
+    quantity=models.PositiveIntegerField()
+    price=models.DecimalField(max_digits=10,decimal_places=2)
+
+    def __str__(self):
+        return f"{self.variant.product.name} {self.variant.colour.colour} {self.variant.storage.capacity}GB-Qty:{self.quantity}"
+    
+    def total_cost(self):
+        return self.price*self.quantity
+
+
+
+
+    
