@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% include "navbar.html" %}
+
+{% block content %}
+
+<!-- Header -->
+<header class="bg-dark py-5" style="min-height: 100px;">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">My Wishlist</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Curate your favorite items with Phoenix</p>
+        </div>
+    </div>
+</header>
+
+<!-- Wishlist Section -->
+<section class="py-5">
+    <div class="container px-4 px-lg-5 mt-5">
+        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+
+            {% if wishlist_items %}
+                {% for item in wishlist_items %}
+                <div class="col mb-5">
+                    <div class="card h-100">
+                        <!-- Product image -->
+                        <img class="card-img-top" src="{{ item.product.thumbnail.url }}" alt="..." />
+                        {% if item.product.is_featured %}
+                        <!-- Featured label -->
+                        <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
+                        {% endif %}
+
+                        <!-- Product details -->
+                        <div class="card-body p-4">
+                            <div class="text-center">
+                                <!-- Product name -->
+                                <h5 class="fw-bolder">{{ item.product.name }}</h5>
+                                
+                                <!-- Product rating -->
+                              
+
+                                <!-- Product price -->
+                                Price: ${{ item.product.price }}<br>
+                                {% if item.product.discount > 0 %}
+                                <!-- Discount label -->
+                                <span class="badge bg-danger text-white">Discount-{{ item.product.discount }}%</span>
+                                {% endif %}
+                                <br>
+                                Brand: {{ item.product.brand }}
+                            </div>
+                        </div>
+
+                        <!-- Wishlist actions -->
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                            <div class="text-center">
+                                <form method="POST" action="{% url 'remove_from_wishlist' wishlist_id=item.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm w-75">Remove</button>
+                                </form>
+                            <a class="btn btn-outline-dark mt-2 w-75" href="{% url 'product' item.product.id %}" style="background-color:green;">View Product</a> 
+
+                            </div>
+ 
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center">Your wishlist is empty.</p>
+            {% endif %}
+
+        </div>
+    </div>
+</section>
+
+{% endblock content %}

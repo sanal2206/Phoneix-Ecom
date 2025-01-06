@@ -1,4 +1,3 @@
- 
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-5">
@@ -6,8 +5,8 @@
 
     <div class="row">
         <!-- Cart Summary Section -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">Your Cart</h4>
                 </div>
@@ -50,15 +49,55 @@
                 </div>
             </div>
         </div>
-
+        
+        <!-- Coupon Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h5 class="mb-0">Apply Coupon</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'apply_coupon' %}" class="d-flex flex-column align-items-center">
+                        {% csrf_token %}
+                        <div class="input-group w-75 mb-3">
+                            <input 
+                                type="text" 
+                                name="coupon_code" 
+                                class="form-control" 
+                                placeholder="Enter Coupon Code" 
+                                {% if applied_coupon %} disabled value="{{ applied_coupon.coupon.code }}" {% endif %}>
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary" 
+                                style="width: 150px;height:30px; padding-top:5px;"
+                                {% if applied_coupon %} disabled {% endif %}>
+                                Apply
+                            </button>
+                        </div>
+                    </form>
+                    {% if applied_coupon %}
+                    <div class="text-center">
+                        <p>Coupon applied: <strong>{{ applied_coupon.coupon.code }}</strong></p>
+                        <form method="POST" action="{% url 'remove_coupon' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Remove Coupon
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
         <!-- Address and Payment Section -->
         <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
+            <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">Select Address and Payment</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" action="{% url 'checkout' %}">
                         {% csrf_token %}
                         <!-- Address Selection -->
                         <h5>Select Address</h5>
@@ -78,7 +117,7 @@
                             <a href="{% url 'manage_address_checkout' address.id %}" class="text-decoration-none text-primary"><p style='font-size:17px;color:blue;'>EDIT</p></a>
                         </div>
                         {% endfor %}
-                        <a href="{% url 'add_address_checkout' %}" class="btn btn-success w-100 mt-3" style='background:green;'>Add new address</a>
+                        <a href="{% url 'add_address_checkout' %}" class="btn btn-success mt-3" style='background:green; width:200px'>Add new address</a>
 
                         <!-- Payment Option -->
                         <h5 class="mt-4">Select Payment Method</h5>
@@ -107,7 +146,7 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 mt-4">Place Order</button>
+                        <button type="submit" class="btn btn-primary mt-4" style='width:200px'>Place Order</button>
                     </form>
                 </div>
             </div>

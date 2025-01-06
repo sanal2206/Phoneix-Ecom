@@ -24,6 +24,7 @@ urlpatterns = [
     path('edit/product/<int:product_id>/', views.edit_product, name='admin_edit_product'),
     path('edit_variant/<int:variant_id>/', views.edit_variant, name='edit_variant'),
     path('delete_variant/<int:variant_id>/',views.delete_variant,name='delete_variant'),
+   
 
     path('category/deactivate/<int:category_id>/', views.deactivate_category, name='deactivate_category'),
     path('category/activate/<int:category_id>/', views.activate_category, name='activate_category'),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('deactivate/variant/<int:variant_id>/', views.deactivate_variant, name='admin_deactivate_variant'),
 
     path('product/<int:pk>/delete/', views.soft_delete_product, name='soft_delete_product'),  # Soft delete product
+     path('product/<int:pk>/', views.Product_detail, name='product_detail'),  # Update accordingly
 
 
 
@@ -66,22 +68,22 @@ urlpatterns = [
     path('admin/users/edit/<int:user_id>/', views.admin_edit_user, name='admin_edit_user'),
     path('admin/users/delete/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
 
-    # Password reset URLs (for admin password reset)
-    path('password-reset/', 
-         auth_views.PasswordResetView.as_view(template_name='admin_password_reset.html'), 
-         name='password_reset'),
+#     # Password reset URLs (for admin password reset)
+#     path('password-reset/', 
+#          auth_views.PasswordResetView.as_view(template_name='admin_password_reset.html'), 
+#          name='admin_password_reset'),
 
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name='admin_password_reset_confirm.html'), 
-         name='password_reset_confirm'),
+#     path('reset/<uidb64>/<token>/', 
+#          auth_views.PasswordResetConfirmView.as_view(template_name='admin_password_reset_confirm.html'), 
+#          name='password_reset_confirm'),
 
-    path('reset/done/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name='admin_password_reset_complete.html'), 
-         name='password_reset_complete'),
+#     path('reset/done/', 
+#          auth_views.PasswordResetCompleteView.as_view(template_name='admin_password_reset_complete.html'), 
+#          name='password_reset_complete'),
 
-    path('password-reset/done/', 
-         auth_views.PasswordResetDoneView.as_view(template_name='admin_password_reset_done.html'), 
-         name='password_reset_done'),
+#     path('password-reset/done/', 
+#          auth_views.PasswordResetDoneView.as_view(template_name='admin_password_reset_done.html'), 
+#          name='password_reset_done'),
 
     # Include the URLs for allauth (if you're using it for authentication)
     path('accounts/', include('allauth.urls')),

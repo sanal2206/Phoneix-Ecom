@@ -12,6 +12,9 @@
             <p><strong>Delivery Address:</strong> {{ order.address }}</p>
             <p><strong>Phone:</strong> {{ user.phone_number}}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+            <p>Payment Status: {{ order.payment_status }}
+            <p>Payment Type: {{ order.payment_method }}
+
             <h5>Items in Your Order:</h5>
             <ul class="list-group">
                 {% for item in items %}

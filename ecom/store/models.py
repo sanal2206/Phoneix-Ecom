@@ -10,6 +10,8 @@ from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django_countries.fields import CountryField
 from image_cropping import ImageCropField, ImageRatioField
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Category of products
 class Category(models.Model):
@@ -155,7 +157,7 @@ class Variant(models.Model):
         return f"{self.product.name} - {self.colour.colour}, {self.storage.capacity}GB"
 
  
-# Review
+#Review
 class Review(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name='reviews', on_delete=models.CASCADE)
@@ -184,6 +186,86 @@ class Cart(models.Model):
         return self.variant.price * self.quantity
 
 
+class Coupon(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    usage_limit = models.PositiveIntegerField(default=1)
+    usage_count = models.PositiveIntegerField(default=0)
+
+    def clean(self):
+        if self.start_date >= self.end_date:
+            raise ValidationError("Start date must be earlier than the end date.")
+        if not (0 < self.discount_percent <= 100):
+            raise ValidationError("Discount percent must be between 0 and 100.")
+
+    @property
+    def is_active(self):
+        now = timezone.now()
+        return self.start_date <= now <= self.end_date and self.usage_count < self.usage_limit
+
+    def __str__(self):
+        return f"{self.code} - {self.discount_percent}%"
+    
+
+
+class UserCoupon(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_coupons")
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
+    is_used = models.BooleanField(default=False)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.coupon.code} - {'Used' if self.is_used else 'Not Used'}"
+
+
+
+from django.db import models
+from django.conf import settings
+ 
+    
+class Wallet(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="wallet"
+    )
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def add_funds(self, amount):
+        self.balance += amount
+        self.save()
+
+    def deduct_funds(self, amount):
+        if amount <= self.balance:
+            self.balance -= amount
+            self.save()
+            return True
+        return False
+
+    def __str__(self):
+        return f"{self.user.email}'s Wallet - Balance: ₹{self.balance}"
+    
+
+class WalletTransaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('Refund', 'Refund'),
+        ('Purchase', 'Purchase'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='wallet_transactions'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    description = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.email} - {self.transaction_type} - {self.amount}"
+
 #orders
 class Order(models.Model):
     STATUS_CHOICES=[
@@ -191,6 +273,7 @@ class Order(models.Model):
         ('Shipped','Shipped'),
         ('Delivered','Delivered'),
         ('Cancelled','Cancelled'),
+        ('Returned', 'Returned')
     ]
 
 
@@ -203,13 +286,54 @@ class Order(models.Model):
     address=models.ForeignKey(Address,on_delete=models.SET_NULL,null=True,blank=True,related_name='address_orders')
     status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='Processing')
     payment_method=models.CharField(max_length=10,choices=PAYMENT_CHOICES,default='COD')
+    applied_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True) 
     total_price=models.DecimalField(max_digits=10,decimal_places=2)
+    wallet_amount_used = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+    #online payement
+    
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+
+    payment_status = models.CharField(max_length=20, default='Pending', choices=[
+        ('Pending', 'Pending'),
+        ('Paid', 'Paid'),
+        ('Failed', 'Failed')
+    ])
 
 
     def __str__(self):
         return f"Orders #{self.id} by {self.user.email} - {self.status}"
+    
+    def cancel_order(self):
+        if self.status not in['Cancelled','Delivered']:
+            self.status='Cancelled'
+            self.save()
+            self.user.wallet.add_funds(self.total_price)
+            WalletTransaction.objects.create( user=self.user, 
+                    amount=self.total_price, 
+                    transaction_type='Refund', 
+                    description=f"Refund for cancelled order {self.id}" )
+        else:
+            raise ValueError('Order cannot be cancelled')
+
+
+    def return_order(self): 
+        if self.status == 'Delivered':
+            self.status = 'Returned' # Change this to 'Returned'
+            self.save()
+            self.user.wallet.add_funds(self.total_price) 
+            WalletTransaction.objects.create( 
+                user=self.user, 
+                amount=self.total_price,
+                transaction_type='Refund', 
+                description=f"Refund for returned order {self.id}" ) 
+            
+             
+             
+        else: 
+            raise ValueError("Only delivered orders can be returned")
     
 
 
@@ -228,4 +352,15 @@ class OrderItem(models.Model):
 
 
 
-    
+class Wishlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlist_items')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"
+
+
+ 
+
+ 

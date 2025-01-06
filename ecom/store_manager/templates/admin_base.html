@@ -17,12 +17,25 @@
         <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
          
         <link rel="icon" href="{% static 'assets/favicon.ico' %}" type="image/x-icon">
+        
+        <style>
+            html, body {
+                height: 100%; /* Make body take full height */
+                margin: 0; /* Remove default margin */
+            }
+            body {
+                display: flex;
+                flex-direction: column; /* Stack children vertically */
+            }
+            .content {
+                flex: 1; /* Allow main content to grow and fill space */
+            }
+        </style>
     </head>
     <body>
         
         {% include "admin_navbar.html" %}
          
-        
         <!-- Messages -->
         {% if messages %}
             {% for message in messages %}
@@ -34,8 +47,10 @@
         {% endif %}
 
         <!-- Main Content -->
-        {% block content %}
-        {% endblock %}
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
 
         <!-- Footer -->
         <footer class="py-5 bg-dark">
@@ -43,6 +58,7 @@
                 <p class="m-0 text-center text-white">Copyright admin &copy; Phoneix.com 2024</p>
             </div>
         </footer>
+        
         <!-- Bootstrap core JS-->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Core theme JS-->

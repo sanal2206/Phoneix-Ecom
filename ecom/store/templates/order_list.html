@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Your Orders</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Welcome to Orders</p>
+        </div>
+    </div>
+</header>
 <div class="container py-5">
     <h1 class="text-center mb-5"><strong>Your Orders</strong></h1>
 
@@ -15,17 +23,21 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-0">Order #{{ order.id }}</h6>
-                           
                             <small class="text-muted">Status: <strong>{{ order.status }}</strong></small>
                         </div>
                         <div class="text-end">
-                            <strong>${{ order.total_price|floatformat:2 }}</strong>
+                            <strong>₹{{ order.total_price|floatformat:2 }}</strong>
                             <a href="{% url 'order_confirmation' order.id %}" class="btn btn-info btn-sm">View Details</a>
-                            {% if order.status != 'Cancelled' %}
-                                <a href="{% url 'cancel_order' order.id %}" class="btn btn-danger btn-sm" 
-                                   onclick="return confirm('Are you sure you want to cancel this order?');">
-                                   Cancel
-                                </a>
+                         
+                            {% if order.status != 'Cancelled' and order.status != 'Delivered' and order.status != 'Returned' %}
+                            <a href="#" class="btn btn-danger btn-sm" onclick="updateOrderStatus('{{ order.id }}', 'Cancelled');">
+                                Cancel
+                            </a>
+                            {% endif %}
+                            {% if order.status == 'Delivered' %}
+                            <a href="#" class="btn btn-warning btn-sm" onclick="updateOrderStatus('{{ order.id }}', 'Returned');">
+                                Return
+                            </a>
                             {% endif %}
                         </div>
                     </li>
@@ -37,4 +49,27 @@
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function updateOrderStatus(orderId, status) {
+        let actionText = status === 'Cancelled' ? 'cancel' : 'return';
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `Do you really want to ${actionText} this order?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: `Yes, ${actionText} it!`,
+            cancelButtonText: 'No, keep it'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Redirect to update order status URL
+                window.location.href = `{% url 'update_order_status' 0 'STATUS' %}`
+                    .replace('0', orderId)
+                    .replace('STATUS', status);
+            }
+        });
+    }
+</script>
 {% endblock %}

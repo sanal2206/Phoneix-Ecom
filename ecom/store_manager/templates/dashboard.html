@@ -47,16 +47,35 @@
     background-color: #3b5998 !important;
     color: white !important;
 }
+.col-md-4 {
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+ 
+  .text-link {
+    text-decoration: none; /* Removes underline */
+    color: inherit;        /* Matches the text color of its parent */
+    cursor: pointer;       /* Keeps the clickable behavior */
+  }
+
+  .text-link:hover {
+    color: gray; /* Optional: Change color on hover for better UX */
+  }
 </style>
+
+ 
  
 {% if user.is_superuser %}
-<div class="container my-5">
+<div class="container my-5 col-md-8 ">
     <div class="row">
       <!-- Total Users Card -->
       <div class="col-md-4">
         <div class="card text-center">
           <div class="card-header">
-            Total Users
+            
+          <a href="{% url 'admin_user_list' %}" class="text-link">Users</a>
+
           </div>
           <div class="card-body">
             <h3>{{ total_users }}</h3>
@@ -67,10 +86,14 @@
       <div class="col-md-4">
         <div class="card text-center">
           <div class="card-header">
-            Total Users
+            
+           
+       
+          <a href="{% url 'product_list' %}" class="text-link">Products</a>
+
           </div>
           <div class="card-body">
-            <h3>{{ total_orders}}</h3>
+            <h3>{{ total_products}}</h3>
           </div>
         </div>
       </div>
@@ -79,7 +102,9 @@
       <div class="col-md-4">
         <div class="card text-center">
           <div class="card-header">
-            Total Categories
+            
+          <a href="{% url 'category_list' %}" class="text-link">Categories</a>
+
           </div>
           <div class="card-body">
             <h3>{{ total_categories }}</h3>
@@ -91,28 +116,34 @@
       <div class="col-md-4">
         <div class="card text-center">
           <div class="card-header">
-            Total Products
+             
+          <a href="{% url 'store_manager_orders' %}" class="text-link">Total Orders</a>
+
           </div>
           <div class="card-body">
-            <h3>{{ total_products }}</h3>
+            <h3>{{ total_orders }}</h3>
           </div>
         </div>
       </div>
-    </div>
-  
-    <br><br><br>
+    
+     
    
     <div class="col-md-4">
         <div class="card text-center">
           <div class="card-header">
-            Total Variant
+           
+          <a href="{% url 'variant_list' %}" class="text-link">Total Variant</a>
+
           </div>
           <div class="card-body">
             <h3>{{ total_variants }}</h3>
           </div>
         </div>
       </div>
-    </div>
+    </div> 
+
+  </div>
+</div>
   
 {% else %}
 <p>You are not authorized to view this form.</p>

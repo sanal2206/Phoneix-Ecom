@@ -89,6 +89,11 @@
                 
                     <button type="submit" class="btn btn-outline-dark mt-auto">Add to Cart</button>
                 </form>
+
+                <form method="POST" action="{% url 'add_to_wishlist' products_id=products.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-dark mt-auto">Add to Wishlist</button>
+                </form>
                 
                 <script>
                     const variantSelector = document.getElementById('variant-selector');

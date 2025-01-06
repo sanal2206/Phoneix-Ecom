@@ -1,0 +1,118 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+ <!-- Header-->
+ <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager  </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Product Detail View</p>
+            <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}">Back</a></li>
+
+        </div>
+    </div>
+</header> 
+
+<!-- Single Product Details for Admin -->
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="zoom-container">
+                        <img src="{{ products.thumbnail.url }}" width="100%" id="ProductImg" class="thumbnail-img">
+                        {% if products.is_featured %}
+                        <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5>Additional Images</h5>
+                    <div class="row">
+                        {% for img in images %}
+                        <div class="col-3 mb-2">
+                            <div class="zoom-container">
+                                <img src="{{ img.image.url }}" class="img-fluid" style="width: 100%; height: auto;">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h1 class="display-5">{{ products.name }}</h1>
+            <h4 class="text-success">Price: $<span id="product-price">{{ products.price }}</span></h4>
+            <h5>Category: {{ products.category.name }}</h5>
+            <h5>Brand: {{ products.brand }}</h5>
+            <h5>Discount: {{ products.discount }} %</h5>
+            <h5>Stock: 
+                {% if products.stock > 0 %}
+                 <span class="text-success">In Stock</span>
+                {% else %}
+                <span class="text-danger">Out of stock</span>
+                {% endif %}
+            </h5>
+            
+            <h5>Average Rating:</h5>
+            <p>
+                {% if avg_rating %}
+                <span>
+                    {% for i in 1|add:""|join:"12345"|slice:":" %}
+                    <i class="fa{% if i <= avg_rating %} fa-star{% else %} fa-star-o{% endif %}" style="color: gold;"></i>
+                    {% endfor %}
+                    <span>({{ avg_rating }} / 5.0)</span>
+                </span>
+                {% else %}
+                <span>No ratings yet.</span>
+                {% endif %}
+            </p>
+
+            <h5>Product Description</h5>
+            <p>{{ products.description }}</p>
+
+            <h5>Variants</h5>
+            <ul class="list-group">
+                {% for variant in variants %}
+                <li class="list-group-item">
+                    {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB 
+                    (Price: ${{ variant.price }}, Stock: {{ variant.stock }})
+                </li>
+                {% endfor %}
+            </ul>
+            
+            <h5 class="mt-4">Actions</h5>
+            <a href="{% url 'admin_edit_product' products.id %}" class="btn btn-warning">Edit Product</a>
+            <a href="{% url 'admin_deactivate_product' products.id %}" class="btn btn-danger">Delete Product</a>
+            <a href="{% url 'add_variant'%}" class="btn btn-success">Add Variant</a>
+        </div>
+    </div>
+</div>
+
+<!-- Products Review -->
+<div class="container my-4">
+    <h3>Product Reviews</h3>
+    <div class="row">
+        <div class="col-md-12">
+            {% for review in reviews %}
+            <div class="review mb-4">
+                <p><strong>{{ review.user.username }}</strong> <small class="text-muted">({{ review.created_at|date:"M d, Y" }})</small></p>
+                <p>
+                    {% for i in 1|add:""|join:"12345"|slice:":" %}
+                    <i class="fa{% if i <= review.rating %} fa-star{% else %} fa-star-o{% endif %}" style="color: gold;"></i>
+                    {% endfor %}
+                    <span>({{ review.rating }} / 5)</span>
+                </p>
+                <p>{{ review.comment }}</p>
+                <hr>
+            </div>
+            {% empty %}
+            <p>No reviews yet. Be the first to review this product!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

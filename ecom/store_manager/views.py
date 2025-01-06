@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.shortcuts import render
-from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order
+from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order,OrderItem
 from django.contrib.auth.views import LoginView
+from store.forms import ReviewForm
 from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm
 
 
@@ -222,6 +223,8 @@ def add_variant(request):
         'variant_form': variant_form,
     })    
 
+ 
+
 def variant_list(request):
     if request.method == 'POST':
         variant_id = request.POST.get('variant_id')
@@ -231,6 +234,8 @@ def variant_list(request):
 
     variants=Variant.objects.all()
     return render(request,'variant_list.html',{'variants':variants})
+
+
 
  
 from django.urls import reverse
@@ -354,29 +359,73 @@ def delete_variant(request, variant_id):
     return redirect('variant_list')
     
 
- 
+# views.py
 
- 
+# views.py
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from store.models import Order, WalletTransaction
+
+# Define allowed transitions
+STATUS_TRANSITIONS = {
+    'Pending': ['Confirmed', 'Cancelled'],
+    'Confirmed': ['Shipped', 'Cancelled'],
+    'Shipped': ['Delivered'],
+    'Delivered': ['Returned'],
+    'Cancelled': ['Pending'],
+    'Returned': ['Delivered']
+}
+
 def store_manager_orders(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
         new_status = request.POST.get('new_status')
+        
         try:
             # Fetch the order
             order = get_object_or_404(Order, id=order_id)
 
-            # Update the status
+            # Check if the new status is valid and can be transitioned to
+            current_status = order.status
             if new_status in dict(Order.STATUS_CHOICES):
-                order.status = new_status
-                order.save()
+                # Prevent invalid transitions
+                if current_status in STATUS_TRANSITIONS and new_status not in STATUS_TRANSITIONS[current_status]:
+                    messages.error(request, f"Cannot change status from {current_status} to {new_status}.")
+                else:
+                    # Update the status
+                    order.status = new_status
+                    order.save()
 
-                # Handle stock adjustment if order is canceled
-                if new_status == 'Cancelled':
-                    for item in order.items.all():
-                        item.variant.stock += item.quantity
-                        item.variant.save()
+                    # Handle stock adjustment if the order is canceled or returned
+                    if current_status != 'Cancelled' and new_status == 'Cancelled':
+                        for item in order.items.all():
+                            item.variant.stock += item.quantity
+                            item.variant.save()
+                        order.user.wallet.add_funds(order.total_price)
+                        WalletTransaction.objects.create(
+                            user=order.user,
+                            amount=order.total_price,
+                            transaction_type='Refund',
+                            description=f"Refund for cancelled order {order.id}"
+                        )
+                    elif current_status == 'Cancelled' and new_status == 'Pending':
+                        for item in order.items.all():
+                            item.variant.stock -= item.quantity
+                            item.variant.save()
+                        order.user.wallet.deduct_funds(order.total_price)
+                        WalletTransaction.objects.create(
+                            user=order.user,
+                            amount=-order.total_price,
+                            transaction_type='Purchase',
+                            description=f"Reversal for order {order.id} being set to {new_status}"
+                        )
+                    elif new_status == 'Returned':
+                        for item in order.items.all():
+                            item.variant.stock += item.quantity
+                            item.variant.save()
 
-                messages.success(request, f"Order #{order.id} status updated to {new_status}.")
+                    messages.success(request, f"Order #{order.id} status updated to {new_status}.")
             else:
                 messages.error(request, "Invalid status provided.")
         except Exception as e:
@@ -384,11 +433,9 @@ def store_manager_orders(request):
 
         return redirect('store_manager_orders')
 
-    # Fetch all orders for display
     orders = Order.objects.all().order_by('-created_at')
     return render(request, 'store_manager_orders.html', {'orders': orders})
 
- 
  
 
 def store_manager_order_detail(request, order_id):
@@ -396,3 +443,64 @@ def store_manager_order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
     return render(request, 'store_manager_order_detail.html', {'order': order})
+
+from django.db.models import Q
+from django.db.models import Avg
+def Product_detail(request, pk):
+    # Get the product by primary key (id)
+    products = get_object_or_404(Product, id=pk, is_active=True, is_deleted=False)
+    
+    # Fetch images for the product
+    images = ProductImage.objects.filter(product=products)
+    
+    # Fetch active variants for the product
+    variants = products.variants.filter(is_active=True)
+   
+    
+    
+    # Get related products (same category but excluding the current product)
+    related_products = Product.objects.filter(category=products.category, is_active=True).exclude(pk=pk)[:4]  # Show up to 4 related products
+    
+    # Calculate the average rating for the product
+    avg_rating = products.reviews.aggregate(Avg('rating'))['rating__avg']  # Get the average rating
+    avg_rating = round(avg_rating, 1) if avg_rating else 0  # Round to 1 decimal place, default to 0 if no reviews
+    
+    # Fetch reviews for the product
+    reviews = products.reviews.all()  # Access the reviews related to the product
+    
+    # Initialize the review form
+    form = ReviewForm()
+
+    # Handle POST request for adding a review
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+             
+            has_ordered = OrderItem.objects.filter(
+                Q(order__user=request.user) & Q(variant__product=products)
+            ).exists()
+
+
+            if not has_ordered:
+                messages.error(request,"You can only review products you have purchased.")
+                return redirect('product', pk=products.id)
+
+            review = form.save(commit=False)
+            review.product = products  # Associate the review with the current product
+            review.user = request.user  # Associate the review with the logged-in user
+            review.save()  # Save the review to the database
+            messages.success(request, "Your review has been submitted successfully!")
+
+            return redirect('product', pk=products.id)  # Redirect to the same product page after saving the review
+
+    context = {
+        'products': products,
+        'images': images,
+        'related_products': related_products,
+        'reviews': reviews,
+        'form': form,  # Include the form for adding reviews
+        'avg_rating': avg_rating,  # Pass the average rating to the template
+        'variants': variants  # Include the product variants
+    }
+
+    return render(request, 'product_detail.html', context)

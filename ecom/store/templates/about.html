@@ -1,24 +1,58 @@
 {% extends "base.html" %}
+{% load static %}
+{% block content %}
 
- {% block content %}
-
-
-  <!-- Header-->
-  <header class="bg-dark py-5">
+<!-- Header-->
+<header class="bg-dark py-5">
     <div class="container px-4 px-lg-5 my-5">
         <div class="text-center text-white">
-            <h1 class="display-4 fw-bolder">About </h1>
-            <p class="lead fw-normal text-white-50 mb-0">Welcome to about page</p>
+            <h1 class="display-4 fw-bolder">About Us</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Welcome to our about page!</p>
         </div>
     </div>
 </header>
 
+<div class="container my-5">
+    <h2 class="fw-bolder mb-4">Our Story</h2>
+    <p>
+        At Phoneix, we believe in providing high-quality smartphones that enhance the way you connect with the world. Founded in 2024, our journey began with a simple idea: to make cutting-edge technology accessible to everyone. From our humble beginnings, we have grown into a leading e-commerce platform, offering a wide range of products tailored to meet the needs of our customers.
+    </p>
 
-<div content>
+    <h2 class="fw-bolder mb-4">Our Mission</h2>
+    <p>
+        Our mission is to empower individuals by providing them with the latest technology at competitive prices. We strive to offer exceptional customer service and ensure a seamless shopping experience. At Phoneix, we are committed to innovation and sustainability, continually seeking ways to reduce our environmental impact while delivering the best products to our customers.
+    </p>
 
-    about page
+    <h2 class="fw-bolder mb-4">Meet Our Team</h2>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{% static 'assets/CEO.jpg' %}" class="card-img-top" alt="Team Member 1" style="height:400px;width:400px">
+                <div class="card-body">
+                    <h5 class="card-title">John Doe</h5>
+                    <p class="card-text">CEO & Founder</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{% static 'assets/CEO1.jpg' %}" class="card-img-top" alt="Team Member 2"style="height:400px;width:400px">
+                <div class="card-body">
+                    <h5 class="card-title">Jane Smith</h5>
+                    <p class="card-text">Head of Marketing</p>
+                </div>
+            </div>
+        </div>
+         
+    </div>
+
+    <h2 class="fw-bolder mb-4">Contact Us</h2>
+    <p>If you have any questions or feedback, feel free to reach out to us at:</p>
+    <ul>
+        <li>Email: support@phoneix.com</li>
+        <li>Phone: +1 (555) 123-4567</li>
+        <li>Address: 123 Phoneix St, Tech City, CA 90001</li>
+    </ul>
 </div>
 
 {% endblock content %}
-
- 
