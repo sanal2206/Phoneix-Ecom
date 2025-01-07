@@ -9,7 +9,7 @@
             <p class="lead fw-normal text-white-50 mb-0">Order List</p>
         </div>
     </div>
-</header> 
+</header>
 
 {% if user.is_superuser %}
 <div class="container py-5">
@@ -34,7 +34,7 @@
                         </div>
 
                         <div class="order-actions text-end">
-                            <strong class="d-block mb-2">${{ order.total_price|floatformat:2 }}</strong>
+                            {% comment %} <strong class="d-block mb-2">₹{{ order.total_price|floatformat:2 }}</strong> {% endcomment %}
                             <a href="{% url 'store_manager_order_detail' order.id %}" class="btn btn-info btn-sm mb-2">View Details</a>
                             <form method="post" action="{% url 'store_manager_orders' %}" class="d-inline-block">
                                 {% csrf_token %}
@@ -45,6 +45,7 @@
                                         <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
                                         <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                                         <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="Returned" {% if order.status == 'Returned' %}selected{% endif %}>Returned</option>
                                     </select>
                                     <button type="submit" class="btn btn-primary btn-sm">Update</button>
                                 </div>

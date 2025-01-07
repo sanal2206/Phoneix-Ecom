@@ -100,3 +100,19 @@ def give_coupon_on_registration(sender, instance, created, **kwargs):
             )
             # Assign the coupon to the user
             UserCoupon.objects.create(user=instance, coupon=coupon, is_used=False)
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import Order, Wallet, WalletTransaction
+
+@receiver(post_save, sender=Order)
+def refund_wallet(sender, instance, **kwargs):
+    if instance.status in ['Cancelled', 'Returned']:
+        refund_amount = instance.wallet_amount_used + instance.total_price
+        instance.user.wallet.add_funds(refund_amount)
+        WalletTransaction.objects.create(
+            user=instance.user,
+            amount=refund_amount,
+            transaction_type='Refund',
+            description=f"Refund for {instance.status.lower()} order {instance.id}"
+        )

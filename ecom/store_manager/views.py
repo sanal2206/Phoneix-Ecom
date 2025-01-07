@@ -504,3 +504,62 @@ def Product_detail(request, pk):
     }
 
     return render(request, 'product_detail.html', context)
+
+ 
+from django.shortcuts import render
+from django.db.models import Sum
+from datetime import date, timedelta
+from django.template.loader import render_to_string
+from store.models import Order
+from .utils import export_to_excel, export_to_pdf
+
+
+
+ 
+
+def generate_sales_report(request):
+    report_type = request.GET.get('report_type', 'total')
+    start_date = end_date = None
+
+    # Define date ranges based on the report type
+    if report_type == 'daily':
+        start_date = date.today()
+        end_date = date.today()
+    elif report_type == 'weekly':
+        start_date = date.today() - timedelta(days=7)
+        end_date = date.today()
+    elif report_type == 'custom':
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+    if start_date and end_date:
+        # Filter orders within the date range
+        orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
+    else:
+        # Default to showing all orders
+        orders = Order.objects.all()
+        
+    # Calculate metrics
+    total_sales_count = orders.count()
+    overall_order_amount = orders.aggregate(Sum('total_price'))['total_price__sum'] or 0
+    total_coupon_deductions = orders.aggregate(Sum('wallet_amount_used'))['wallet_amount_used__sum'] or 0
+
+    context = {
+        'total_sales_count': total_sales_count,
+        'overall_order_amount': overall_order_amount,
+        'total_coupon_deductions': total_coupon_deductions,
+        'start_date': start_date,
+        'end_date': end_date,
+        'report_type': report_type
+    }
+
+    # Handle export requests
+    if 'export' in request.GET:
+        export_type = request.GET.get('export')
+        if export_type == 'pdf':
+            html_content = render_to_string('sales_report.html', context)
+            return export_to_pdf(html_content)
+        elif export_type == 'excel':
+            return export_to_excel(context)
+
+    return render(request, 'sales_report.html', context)

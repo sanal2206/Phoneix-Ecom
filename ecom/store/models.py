@@ -305,35 +305,21 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Orders #{self.id} by {self.user.email} - {self.status}"
-    
+ 
     def cancel_order(self):
-        if self.status not in['Cancelled','Delivered']:
-            self.status='Cancelled'
+        if self.status not in ['Cancelled', 'Delivered']:
+            self.status = 'Cancelled'
             self.save()
-            self.user.wallet.add_funds(self.total_price)
-            WalletTransaction.objects.create( user=self.user, 
-                    amount=self.total_price, 
-                    transaction_type='Refund', 
-                    description=f"Refund for cancelled order {self.id}" )
         else:
             raise ValueError('Order cannot be cancelled')
 
-
-    def return_order(self): 
+    def return_order(self):
         if self.status == 'Delivered':
-            self.status = 'Returned' # Change this to 'Returned'
+            self.status = 'Returned'  
             self.save()
-            self.user.wallet.add_funds(self.total_price) 
-            WalletTransaction.objects.create( 
-                user=self.user, 
-                amount=self.total_price,
-                transaction_type='Refund', 
-                description=f"Refund for returned order {self.id}" ) 
-            
-             
-             
-        else: 
+        else:
             raise ValueError("Only delivered orders can be returned")
+     
     
 
 

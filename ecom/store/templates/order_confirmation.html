@@ -12,6 +12,7 @@
             <p><strong>Delivery Address:</strong> {{ order.address }}</p>
             <p><strong>Phone:</strong> {{ user.phone_number}}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+            <p><strong>Wallet amount used:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
             <p>Payment Status: {{ order.payment_status }}
             <p>Payment Type: {{ order.payment_method }}
 
@@ -38,4 +39,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

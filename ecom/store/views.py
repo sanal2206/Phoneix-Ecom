@@ -654,131 +654,9 @@ def add_address_checkout(request):
 
 
  
- 
-
-
-
-# from django.shortcuts import render, redirect, get_object_or_404
-# from django.contrib.auth.decorators import login_required
-# from django.contrib import messages
-# from django.utils.timezone import now
-# from decimal import Decimal
-# from .models import Cart, Address, Order, OrderItem, UserCoupon
-# from .forms import AddressForm
-# from .utils import calculate_totals, create_razorpay_order
-# from django.conf import settings
-# from django.views.decorators.csrf import csrf_exempt
-# import razorpay
-
-# @csrf_exempt
-# @login_required
-# def checkout(request):
-#     cart_items = Cart.objects.filter(user=request.user)
-#     if not cart_items.exists():
-#         messages.error(request, "Your cart is empty. Please add items before checkout.")
-#         return redirect('cart')
-
-#     coupon_id = request.session.get('applied_coupon_id')
-#     subtotal, discount_total, coupon_discount, applied_coupon, shipping_cost, total = calculate_totals(cart_items, coupon_id, request.user)
-
-#     # Convert total to integer for Razorpay order creation
-#     total_paise = int(total * 100)
-
-#     addresses = Address.objects.filter(user=request.user)
-
-#     if request.method == 'POST':
-#         selected_address_id = request.POST.get('address_id')
-#         payment_method = request.POST.get('payment_method')
-        
-#         if selected_address_id:
-#             address = get_object_or_404(Address, id=selected_address_id, user=request.user)
-#             if payment_method == 'Online':
-#                 # Generate Razorpay order
-#                 razorpay_order = create_razorpay_order(total_paise)
-#                 razorpay_order_id = razorpay_order['id']
-#                 # Store Razorpay order details in session
-#                 request.session['razorpay_order_id'] = razorpay_order_id
-#                 request.session['payment_method'] = payment_method
-#                 request.session['selected_address_id'] = selected_address_id
-
-#                 return render(request, 'payment.html', {
-#                     'razorpay_order_id': razorpay_order_id,
-#                     'razorpay_key': settings.RAZORPAY_KEY_ID,
-#                     'razorpay_amount': total_paise,  # Pass amount in paise
-#                 })
-#             else:
-#                 request.session['payment_method'] = payment_method
-#                 request.session['selected_address_id'] = selected_address_id
-#                 return redirect('place_order_from_cart', address_id=address.id)
-
-#     return render(request, 'checkout.html', {
-#         'cart_items': cart_items,
-#         'addresses': addresses,
-#         'address_form': AddressForm(),
-#         'subtotal': subtotal,
-#         'discount_total': discount_total,
-#         'coupon_discount': coupon_discount,
-#         'total': total,
-#         'applied_coupon': applied_coupon,
-#         'shipping_cost': shipping_cost,
-#     })
-
-
-# @csrf_exempt
-# @login_required
-# def place_order_from_cart(request, address_id):
-#     cart_items = Cart.objects.filter(user=request.user)
-#     if not cart_items.exists():
-#         messages.error(request, "Your cart is empty. Please add items before checkout.")
-#         return redirect('cart')
-
-#     coupon_id = request.session.get('applied_coupon_id')
-#     subtotal, discount_total, coupon_discount, applied_coupon, shipping_cost, total = calculate_totals(cart_items, coupon_id, request.user)
-
-#     address = get_object_or_404(Address, id=address_id, user=request.user)
-#     payment_method = request.session.get('payment_method', 'COD')
-#     razorpay_order_id = request.session.get('razorpay_order_id', '')
-
-#     order = Order.objects.create(
-#         user=request.user,
-#         address=address,
-#         total_price=total,
-#         payment_method=payment_method,  # Use the payment method from the session
-#         applied_coupon=applied_coupon,  # Add the applied coupon
-#         razorpay_order_id=razorpay_order_id,
-#         payment_status='Paid' if payment_method == 'Online' else 'Pending'  # Update payment status
-#     )
-
-#     for item in cart_items:
-#         OrderItem.objects.create(
-#             order=order,
-#             variant=item.variant,
-#             quantity=item.quantity,
-#             price=item.variant.price,
-#         )
-#         item.variant.stock -= item.quantity
-#         item.variant.save()
-
-#     # Mark the coupon as used and update the usage count after the order is created successfully
-#     if applied_coupon:
-#         user_coupon = UserCoupon.objects.get(user=request.user, coupon=applied_coupon)
-#         user_coupon.is_used = True
-#         user_coupon.save()
-#         applied_coupon.usage_count += 1
-#         applied_coupon.save()
-
-#     cart_items.delete()
-#     request.session.pop('applied_coupon_id', None) 
-#     request.session.pop('payment_method', None)
-#     request.session.pop('razorpay_order_id', None)
-#     request.session.pop('selected_address_id', None)
-
-#     return redirect('order_confirmation', order_id=order.id)
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils.timezone import now
 from decimal import Decimal
 from .models import Cart, Address, Order, OrderItem, UserCoupon, Wallet, WalletTransaction
 from .forms import AddressForm
@@ -849,7 +727,6 @@ def checkout(request):
         'shipping_cost': shipping_cost,
     })
 
-
 @csrf_exempt
 @login_required
 def place_order_from_cart(request, address_id):
@@ -868,22 +745,30 @@ def place_order_from_cart(request, address_id):
     # Deduct wallet amount
     wallet = Wallet.objects.get(user=request.user)
     wallet_amount = wallet.balance
+    wallet_amount_used = 0
     if wallet_amount > 0:
         if wallet_amount >= total:
             wallet.deduct_funds(total)
+            wallet_amount_used = total
             total = 0
             payment_status = 'Paid'
         else:
             total -= wallet_amount
             wallet.deduct_funds(wallet_amount)
+            wallet_amount_used = wallet_amount
             payment_status = 'Pending'
     else:
         payment_status = 'Pending'
+        
+    if payment_method == 'Online' and total == 0:
+        payment_status == 'Paid'
+
 
     order = Order.objects.create(
         user=request.user,
         address=address,
         total_price=total,
+        wallet_amount_used=wallet_amount_used,
         payment_method=payment_method,  # Use the payment method from the session
         applied_coupon=applied_coupon,  # Add the applied coupon
         razorpay_order_id=razorpay_order_id,
@@ -909,10 +794,10 @@ def place_order_from_cart(request, address_id):
         applied_coupon.save()
 
     # Create a WalletTransaction for the wallet deduction
-    if wallet_amount > 0:
+    if wallet_amount_used > 0:
         WalletTransaction.objects.create(
             user=request.user,
-            amount=wallet_amount if wallet_amount < total else total,
+            amount=wallet_amount_used,
             transaction_type='Purchase',
             description=f"Purchase for order {order.id}"
         )
@@ -924,6 +809,7 @@ def place_order_from_cart(request, address_id):
     request.session.pop('selected_address_id', None)
 
     return redirect('order_confirmation', order_id=order.id)
+
 
 
 @csrf_exempt
@@ -983,6 +869,12 @@ def order_list(request):
     })
 
 
+ 
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import Order, Product, Variant, OrderItem
 
 @login_required
 def cancel_order(request, order_id):
@@ -990,10 +882,17 @@ def cancel_order(request, order_id):
     if order.status in ['Processing', 'Shipped']:
         order.status = 'Cancelled'
         order.save()
+        
+        # Update stock
+        for item in order.items.all():
+            variant = item.variant
+            variant.stock += item.quantity
+            variant.save()
+        
         messages.success(request, "Your order has been cancelled.")
     else:
         messages.error(request, "Order cannot be cancelled.")
-
+    
     return redirect('order_list')
 
 @login_required
@@ -1002,12 +901,18 @@ def return_order(request, order_id):
     if order.status == 'Delivered':
         order.status = 'Returned'
         order.save()
+        
+        # Update stock
+        for item in order.items.all():
+            variant = item.variant
+            variant.stock += item.quantity
+            variant.save()
+        
         messages.success(request, "Your order has been returned.")
     else:
         messages.error(request, "Order cannot be returned.")
-
+    
     return redirect('order_list')
-
 
 
 def add_to_wallet(request, amount):
@@ -1088,26 +993,31 @@ def remove_coupon(request):
 
 # views.py
 # views.py
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Order, OrderItem
 
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from .models import Order
-
+@csrf_exempt
+@login_required
 def update_order_status(request, order_id, status):
-    order = get_object_or_404(Order, id=order_id)
-    if status == 'Cancelled':
-        try:
-            order.cancel_order()
-            messages.success(request, f"Order {order_id} cancelled successfully!")
-        except ValueError as e:
-            messages.error(request, str(e))
-    elif status == 'Returned':
-        try:
-            order.return_order()
-            messages.success(request, f"Order {order_id} returned successfully!")
-        except ValueError as e:
-            messages.error(request, str(e))
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    if status not in ['Cancelled', 'Returned']:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    
+    if status == 'Cancelled' and order.status in ['Processing', 'Shipped']:
+        order.status = 'Cancelled'
+    elif status == 'Returned' and order.status == 'Delivered':
+        order.status = 'Returned'
     else:
-        messages.error(request, 'Invalid status')
+        return JsonResponse({'error': 'Order cannot be updated'}, status=400)
+    
+    order.save()
 
-    return redirect('order_list')  # Replace 'your_orders_page' with the name of your orders page URL
+    # Update stock
+    for item in order.items.all():
+        variant = item.variant
+        variant.stock += item.quantity
+        variant.save()
+
+    return JsonResponse({'success': 'Order status updated'})

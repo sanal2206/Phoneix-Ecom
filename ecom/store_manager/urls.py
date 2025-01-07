@@ -86,5 +86,9 @@ urlpatterns = [
 #          name='password_reset_done'),
 
     # Include the URLs for allauth (if you're using it for authentication)
+
+
+    path('sales_report/<str:report_type>/', views.generate_sales_report, name='generate_sales_report'),
+    path('sales_report.html/', views.generate_sales_report, name='generate_sales_report'),
     path('accounts/', include('allauth.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

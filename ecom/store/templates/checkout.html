@@ -35,7 +35,11 @@
                     </p>
                     <p class="d-flex justify-content-between">
                         <span>Discount:</span>
-                        <span>-${{ discount_total|floatformat:2 }}</span>
+                        <span>${{ discount_total|floatformat:2 }}</span>
+                    </p>
+                    <p class="d-flex justify-content-between">
+                        <span>Wallet Bal:</span>
+                        <span>${{ user.wallet.balance|floatformat:2 }}</span>
                     </p>
                     <p class="d-flex justify-content-between">
                         <span>Shipping:</span>

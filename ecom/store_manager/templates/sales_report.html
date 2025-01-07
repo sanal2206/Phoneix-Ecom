@@ -1,0 +1,51 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Sales Report</h1>
+        </div>
+    </div>
+</header>
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Sales Report</strong></h1>
+
+    <form method="get" action="">
+        <div class="row mb-4">
+            <div class="col text-center">
+                <button type="submit" name="report_type" value="total" class="btn btn-primary">Total</button>
+                <button type="submit" name="report_type" value="daily" class="btn btn-primary">Daily</button>
+                <button type="submit" name="report_type" value="weekly" class="btn btn-secondary">Weekly</button>
+                <button type="submit" name="report_type" value="custom" class="btn btn-info">Custom</button>
+            </div>
+        </div>
+        {% if report_type == 'custom' %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" required>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+
+    {% if total_sales_count is not None %}
+    <h2 class="text-center mb-5"><strong>Sales Report from {{ start_date }} to {{ end_date }}</strong></h2>
+    <ul>
+        <li>Total Sales Count: {{ total_sales_count }}</li>
+        <li>Overall Order Amount: ₹{{ overall_order_amount }}</li>
+        <li>Total Coupon Deductions: ₹{{ total_coupon_deductions }}</li>
+    </ul>
+
+    <div>
+        <a href="?export=pdf" class="btn btn-primary">Download PDF</a>
+        <a href="?export=excel" class="btn btn-secondary">Download Excel</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

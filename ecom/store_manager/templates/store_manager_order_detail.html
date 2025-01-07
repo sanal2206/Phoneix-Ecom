@@ -22,6 +22,7 @@
             <p><strong>Order ID:</strong> {{ order.id }}</p>
             <p><strong>Status:</strong> {{ order.status }}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+            <p><strong>Wallet amount:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
             <p><strong>Address:</strong> {{ order.address }}</p>
             <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
         </div>
