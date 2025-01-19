@@ -158,6 +158,144 @@
 
   </div>
 </div>
+
+
+<!-- Chart Section -->
+<div class="container my-5">
+  <h2 class="text-center">Sales Data</h2>
+  <div class="text-center mb-3">
+      <form method="GET" action="">
+          <select name="filter" onchange="this.form.submit()">
+              <option value="monthly" {% if request.GET.filter == 'monthly' %}selected{% endif %}>Monthly</option>
+              <option value="yearly" {% if request.GET.filter == 'yearly' %}selected{% endif %}>Yearly</option>
+          </select>
+      </form>
+  </div>
+  <canvas id="salesChart" width="400" height="200"></canvas>
+</div>
+
+<!-- Best Selling Products -->
+{% comment %} <div class="container my-5">
+  <h2 class="text-center">Best Selling Products</h2>
+  <ul>
+      {% for product in best_selling_products %}
+          <li>{{ product.product__name }}: {{ product.total_sales }}</li>
+      {% endfor %}
+  </ul>
+</div> {% endcomment %}
+
+{% comment %} <div class="container my-5">
+  <h2>Best Selling Products</h2>
+  <ul>
+      {% for product in best_selling_products %}
+          <li>{{ product.variant__product__name }} - Total Sold: {{ product.total_sales }}</li>
+      {% endfor %}
+  </ul>
+
+  <h2>Best Selling Categories</h2>
+  <ul>
+      {% for category in best_selling_categories %}
+          <li>{{ category.variant__product__category__name }} - Total Sold: {{ category.total_sales }}</li>
+      {% endfor %}
+  </ul>
+
+  <h2>Best Selling Brands</h2>
+  <ul>
+      {% for brand in best_selling_brands %}
+          <li>{{ brand.variant__product__brand }} - Total Sold: {{ brand.total_sales }}</li>
+      {% endfor %}
+  </ul>
+</div> {% endcomment %}
+<div class="container my-5">
+  <h2 class="text-center">Sales Summary</h2>
+
+  <!-- Best Selling Products Table -->
+  <h3 class="text-center">Best Selling Products</h3>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Product Name</th>
+        <th>Total Sold</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in best_selling_products %}
+      <tr>
+        <td>{{ product.variant__product__name }}</td>
+        <td>{{ product.total_sales }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Best Selling Categories Table -->
+  <h3 class="text-center">Best Selling Categories</h3>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Category Name</th>
+        <th>Total Sold</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for category in best_selling_categories %}
+      <tr>
+        <td>{{ category.variant__product__category__name }}</td>
+        <td>{{ category.total_sales }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Best Selling Brands Table -->
+  <h3 class="text-center">Best Selling Brands</h3>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Brand Name</th>
+        <th>Total Sold</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for brand in best_selling_brands %}
+      <tr>
+        <td>{{ brand.variant__product__brand__name|capfirst }}</td>
+        <td>{{ brand.total_sales }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<script>
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  const salesData = {
+      labels: [{% for data in sales_data %} '{{ data.order_date__date|date:"Y-m-d" }}', {% endfor %}],
+      datasets: [{
+          label: 'Total Sales',
+          data: [{% for data in sales_data %} {{ data.total_sales }}, {% endfor %}],
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+      }]
+  };
+
+  const salesChart = new Chart(ctx, {
+      type: 'line',
+      data: salesData,
+      options: {
+          responsive: true,
+          scales: {
+              y: {
+                  beginAtZero: true
+              }
+          }
+      }
+  });
+</script>
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 {% else %}
 <p>You are not authorized to view this form.</p>

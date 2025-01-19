@@ -101,13 +101,33 @@ def give_coupon_on_registration(sender, instance, created, **kwargs):
             # Assign the coupon to the user
             UserCoupon.objects.create(user=instance, coupon=coupon, is_used=False)
 
+
+
+@receiver(post_save, sender=Coupon)
+def assign_coupon_to_users_on_creation(sender, instance, created, **kwargs):
+    """
+    Automatically assigns a newly created coupon to all users.
+    """
+    if created:  # Trigger only when a new coupon is created
+        users = User.objects.all()  # Fetch all users
+        user_coupons = []
+
+        for user in users:
+            # Avoid duplicate assignments
+            if not UserCoupon.objects.filter(user=user, coupon=instance).exists():
+                user_coupons.append(UserCoupon(user=user, coupon=instance))
+
+        # Bulk create to optimize database performance
+        UserCoupon.objects.bulk_create(user_coupons)
+        print(f"Coupon '{instance.code}' assigned to all users.")
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Order, Wallet, WalletTransaction
 
 @receiver(post_save, sender=Order)
 def refund_wallet(sender, instance, **kwargs):
-    if instance.status in ['Cancelled', 'Returned']:
+    if instance.status in ['Cancelled', 'Returned'] :
         refund_amount = instance.wallet_amount_used + instance.total_price
         instance.user.wallet.add_funds(refund_amount)
         WalletTransaction.objects.create(
@@ -116,3 +136,63 @@ def refund_wallet(sender, instance, **kwargs):
             transaction_type='Refund',
             description=f"Refund for {instance.status.lower()} order {instance.id}"
         )
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+from .models import Wallet
+
+User = get_user_model()
+
+@receiver(post_save, sender=User)
+def create_wallet(sender, instance, created, **kwargs):
+    if created:
+        Wallet.objects.create(user=instance)
+
+
+from django.dispatch import Signal
+
+# Define a signal for the return request approval
+return_request_approved = Signal()
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import ReturnRequest, WalletTransaction
+
+@receiver(post_save, sender=ReturnRequest)
+def handle_refund(sender, instance, created, **kwargs):
+    if not created and instance.status == 'Approved':
+        # Process refund
+        try:
+            order_item = instance.order_item
+            order = order_item.order
+
+            # Calculate refund amount
+            refund_amount = order_item.total_cost * order_item.quantity
+
+            # Check payment status
+            if order.payment_status == 'Paid':
+                # Full refund for paid orders
+                wallet = instance.user.wallet
+                wallet.add_funds(refund_amount)
+                WalletTransaction.objects.create(
+                    user=instance.user,
+                    amount=refund_amount,
+                    transaction_type='Refund',
+                    description=f"Refund approved for return request of order item {instance.order_item.id}"
+                )
+            elif order.payment_method == 'COD' and order.wallet_amount_used > 0:
+                # If COD, refund only the wallet amount used
+                wallet = instance.user.wallet
+                wallet.add_funds(order.wallet_amount_used)
+                
+                WalletTransaction.objects.create(
+                    user=instance.user,
+                    amount=order.wallet_amount_used,
+                    transaction_type='Refund',
+                    description=f"Wallet refund approved for return request of order item {instance.order_item.id}"
+                )
+        except Exception as e:
+            print("Error during refund processing:", e)
+

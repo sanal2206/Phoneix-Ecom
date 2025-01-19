@@ -26,14 +26,7 @@
                                 value="{{ search_query }}">
                         </div>
                     
-                        <!-- Stock Filter -->
-                        <div class="col-md-2">
-                            <select name="show_out_of_stock" class="form-select">
-                                <option value="yes" {% if show_out_of_stock == "yes" %}selected{% endif %}>Show Out of Stock</option>
-                                <option value="no" {% if show_out_of_stock == "no" %}selected{% endif %}>Hide Out of Stock</option>
-                            </select>
-                        </div>
-                    
+                         
                         <!-- Sorting Options -->
                         <div class="col-md-2">
                             <select name="sort_by" class="form-select">
@@ -45,6 +38,29 @@
                                 <option value="featured" {% if sort_by == "featured" %}selected{% endif %}>Featured</option>
                             </select>
                         </div>
+
+
+                        <div class="col-md-2">
+                            <select name="brand" class="form-select">
+                                <option value="" {% if brand == "" %}selected{% endif %}>All Brands</option>
+                                {% for brand in brands %}
+                                    <option value="{{ brand.name }}" {% if brand.name == selected_brand %}selected{% endif %}>{{ brand.name|capfirst }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <select name="type_category" class="form-select">
+                                <option value="" {% if selected_type_category == "" %}selected{% endif %}>All Types</option>
+                                {% for type_category in type_categories %}
+                                    <option value="{{ type_category.name }}" {% if type_category.name == selected_type_category %}selected{% endif %}>
+                                        {{ type_category.name|capfirst }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        
                     
                         <!-- Submit Button -->
                         <div class="col-md-2">
@@ -72,13 +88,31 @@
                             <h5 class="mb-1">{{ coupon.code }}</h5>
                             <p class="mb-0">
                                 <strong>{{ coupon.discount_percent }}% OFF</strong><br>
-                                Valid Until: {{coupon.end_date|date:"Y-m-d" }}
+                                Valid Until: {{coupon.end_date|date:"d-m-Y" }}
                             </p>
                         </div>
                     {% endfor %}
                 </div>
          
             {% endif %}
+
+
+            {% comment %} {% if coupons %}
+            <div class="d-flex flex-wrap">
+                {% for coupon in  coupons%}
+                    <div class="badge bg-primary text-white m-2 p-3" style="font-size: 1.2em; border-radius: 10px;">
+                        <h5 class="mb-1">{{ coupon.code }}</h5>
+                        <p class="mb-0">
+                            <strong>{{ coupon.discount_percent }}% OFF</strong><br>
+                            Valid Until: {{coupon.end_date|date:"Y-m-d" }}
+                        </p>
+                    </div>
+                {% endfor %}
+            </div> {% endcomment %}
+     
+        {% comment %} {% endif %} {% endcomment %}
+
+
         </div>
         
 

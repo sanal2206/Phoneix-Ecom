@@ -42,10 +42,34 @@
           </div>
 
           <button class="btn btn-primary" style="width:100%">Activate Account</button>
-          <p>Need a new OTP? <a href="{% url 'resend-otp' %}">Resend OTP</a></p>
+          {% comment %} <p>Need a new OTP? <a href="{% url 'resend-otp' %}">Resend OTP</a></p> {% endcomment %}
+          <p>Need a new OTP? <a href="#" id="resend-otp-link">Resend OTP</a></p>
 
     </form>
+    
 
+    <script>
+        document.getElementById('resend-otp-link').addEventListener('click', function (e) {
+            e.preventDefault();  // Prevent default link behavior
+    
+            fetch("{% url 'resend-otp' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);  // Display success or error message
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred while resending the OTP.");
+            });
+        });
+    </script>
+    
 
 
 {% endblock content %}

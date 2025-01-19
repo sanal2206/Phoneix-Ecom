@@ -23,7 +23,8 @@
             <p><strong>Status:</strong> {{ order.status }}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
             <p><strong>Wallet amount:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
-            <p><strong>Address:</strong> {{ order.address }}</p>
+            <p><strong>Customer Name:</strong> {{ order.user.username }}</p>
+            <p><strong>Address:</strong> {{ order.address_snapshot.address_line_1  }}-{{ order.address_snapshot.address_line_2 }}-{{ order.address_snapshot.postal_code }}</p>
             <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
         </div>
     </div>

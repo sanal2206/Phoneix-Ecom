@@ -1,37 +1,51 @@
 from django.shortcuts import render,redirect,get_object_or_404,HttpResponse
-from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address,Cart,Variant,Wishlist,Wallet,Coupon,UserCoupon
+from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address,Cart,Variant,Wishlist,Wallet,Coupon,UserCoupon,Order,OrderItem,ReturnRequest,Brand,TypeCategory
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django .contrib.auth import authenticate,login,logout
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from .forms import SignUpForm,ReviewForm,AddressForm,UserProfileForm
+from .forms import SignUpForm,ReviewForm,AddressForm,UserProfileForm,ReturnRequestForm
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.db.models import F
 
 # Create your views here.
-
- 
 
 @login_required
 def home(request):
     # Get the filter and sorting values from the GET request
     search_query = request.GET.get('q', '')
-    show_out_of_stock = request.GET.get('show_out_of_stock', 'no')
     sort_by = request.GET.get('sort_by', 'name_asc')
+    
+    # Get selected type category from GET request
+    selected_type_category = request.GET.get('type_category', '')
 
     # Start with the basic query, filtering only active and non-deleted products
-    products = Product.objects.filter(is_active=True, is_deleted=False)
+    products = Product.objects.filter(
+    is_active=True, 
+    is_deleted=False, 
+    type_category__is_active=True,  # Ensure the type category is active
+    category__is_active=True        # Ensure the category is active
+        )
 
     # Filter by search query if provided
     if search_query:
         products = products.filter(name__icontains=search_query)
 
-    # Filter by stock availability
-    if show_out_of_stock == 'no':
-        products = products.filter(stock__gt=0)  # Assuming 'stock' is the field for product quantity
+        if not products.exists():
+            messages.info(request, "No products found matching your search.")
+    
+    # Handle brand filtering
+    selected_brand = request.GET.get('brand', '')
+    if selected_brand:
+        products = products.filter(brand__name=selected_brand)
+
+    # Handle type category filtering
+    if selected_type_category:
+        products = products.filter(type_category__name=selected_type_category)
 
     # Sort products based on selected option
     if sort_by == 'name_asc':
@@ -53,25 +67,39 @@ def home(request):
         product.avg_rating = round(avg_rating, 1) if avg_rating else 0
         product.stars_range = range(1, 6)  # Create a range from 1 to 5 for stars
 
-  
     # Fetch available coupons 
     available_coupons = Coupon.objects.prefetch_related('usercoupon_set').filter( 
         start_date__lte=timezone.now(),
         end_date__gte=timezone.now(), 
         usercoupon__is_used=False,
-        usercoupon__user=request.user
+        usercoupon__user=request.user,
+        usage_count__lt=F('usage_limit')  # Ensure usage_count is less than usage_limit
+
     ).distinct()
-         
-        
+
+    # Fetching all brands for the dropdown
+    brands = Brand.objects.all()
+    type_categories = TypeCategory.objects.filter(is_active=True)
 
     return render(request, 'home.html', {
         'products': products,
         'search_query': search_query,
-        'show_out_of_stock': show_out_of_stock,
+        'type_categories': type_categories,
+        'selected_type_category': selected_type_category,
         'sort_by': sort_by,
         'available_coupons': available_coupons,
+        'brands': brands,
     })
 
+
+ 
+
+def brand_view(request, brand_name):
+    brand_name = brand_name.lower()  # Ensure brand name is lowercase
+    brand = Brand.objects.get(name=brand_name)  # Get the brand by name
+    products = Product.objects.filter(brand=brand)  # Filter products by brand
+
+    return render(request, 'your_template.html', {'products': products, 'brand': brand})
 
 
 def about(request):
@@ -108,22 +136,31 @@ def logout_user(request):
 
 
 #register
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .forms import SignUpForm
 
 def register_user(request):
+    form = SignUpForm()
     
-    
-    form=SignUpForm()
-    if request.method=='POST':
-        form=SignUpForm(request.POST)
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        
         if form.is_valid():
             form.save()
-            messages.success(request,'Account created successfully,An OTP sent to your email')
-            return redirect('verify-email',username=request.POST['username'])
-    context={'form':form}
-    return render(request,'register.html',context) 
- 
+            gmail_id = form.cleaned_data['email']  # Assign to gmail_id variable
+            request.session['gmail_id'] = gmail_id  # Store Gmail ID in session
+            
+            messages.success(request, 'Account created successfully. An OTP has been sent to your email.')
+            return redirect('verify-email', username=request.POST['username'])
+    
+    # Print the email stored in the session (if available) after processing the request
+    if 'gmail_id' in request.session:
+        print(f"Stored email in session: {request.session['gmail_id']}")
+    
+    context = {'form': form}
+    return render(request, 'register.html', context)
 
- 
 
 def verify_email(request, username):
     user = get_user_model().objects.get(username=username)
@@ -158,49 +195,69 @@ def verify_email(request, username):
     except:
         return render(request,'verify-email')
 
+ 
+import logging
+from django.shortcuts import redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
+from .models import OtpToken  # Replace with your actual OTP model
 
-
-
+logger = logging.getLogger(__name__)
+COOLDOWN_PERIOD = 5
 def resend_otp(request):
     if request.method == 'POST':
-        user_email = request.POST["otp_email"]
-        
-        if get_user_model().objects.filter(email=user_email).exists():
-            user = get_user_model().objects.get(email=user_email)
-            otp = OtpToken.objects.create(user=user, otp_expires_at=timezone.now() + timezone.timedelta(minutes=5))
-            
-            
-            # email variables
-            subject="Email Verification"
-            message = f"""
-                                Hi {user.username}, here is your OTP {otp.otp_code} 
-                                it expires in 5 minute, use the url below to redirect back to the website
-                                http://127.0.0.1:8000/verify-email/{user.username}
-                                
-                                """
-            sender = "sanalsabu22@gmail.com"
-            receiver = [user.email, ]
-        
-        
-            # send email
-            send_mail(
-                    subject,
-                    message,
-                    sender,
-                    receiver,
-                    fail_silently=False,
-                )
-            
-            messages.success(request, "A new OTP has been sent to your email-address")
-            return redirect("verify-email", username=user.username)
+        # Retrieve the email from the session
+        user_email = request.session.get('gmail_id')
+        if not user_email:
+            logger.warning("No email found in the session for resending OTP.")
+            return JsonResponse({'success': False, 'message': "No email found for resending OTP."})
 
-        else:
-            messages.warning(request, "This email dosen't exist in the database")
-            return redirect("resend-otp")
-        
-           
-    context = {}
-    return render(request, "resend_otp.html", context)
+        try:
+            # Get the user by email
+            User = get_user_model()
+            user = User.objects.filter(email=user_email).first()
+            if not user:
+                return JsonResponse({'success': False, 'message': "User not found."})
+
+
+            from .models import OtpToken  # Import your OTP model
+            # Check the last OTP generated for the user
+            last_otp = OtpToken.objects.filter(user=user).order_by('-otp_expires_at').first()
+
+            if last_otp:
+                time_since_last_otp = (timezone.now() - last_otp.otp_created_at).total_seconds() / 60
+                if time_since_last_otp < COOLDOWN_PERIOD:
+                    remaining_time = COOLDOWN_PERIOD - time_since_last_otp
+                    return JsonResponse({
+                        'success': False,
+                        'message': f"Please wait {remaining_time:.1f} minutes before requesting a new OTP."
+                    })
+
+            
+            # Generate a new OTP
+            otp = OtpToken.objects.create(
+                user=user,
+                otp_expires_at=timezone.now() + timezone.timedelta(minutes=5)
+            )
+
+            # Send OTP to the user's email
+            subject = "Resend OTP Verification"
+            message = f"Hi {user.username}, your OTP is {otp.otp_code}. It will expire in 5 minutes."
+            sender = "sanalsabu22@example.com"  # Replace with your sender email
+            receiver = [user.email]
+
+            send_mail(subject, message, sender, receiver, fail_silently=False)
+
+            logger.info(f"OTP resent to {user.email}")
+            return JsonResponse({'success': True, 'message': "OTP resent successfully."})
+        except Exception as e:
+            logger.error(f"Error resending OTP: {e}")
+            return JsonResponse({'success': False, 'message': "Failed to resend OTP. Please try again later."})
+
+    return JsonResponse({'success': False, 'message': "Invalid request method."})
+
 from django.db.models import Q
 
 
@@ -325,13 +382,15 @@ def add_address(request):
             return redirect('user_profile')  # Redirect to profile page after adding address
     else:
         form = AddressForm()
-    return render(request, 'manage_address.html', {'form': form})
+    return render(request, 'manage_address_profile.html', {'form': form})
 
 
 @login_required
 def delete_address(request, address_id):
     address = Address.objects.get(id=address_id, user=request.user)
     address.delete()
+    messages.success(request, "Address deleted successfully.")
+
     return redirect('user_profile')  # Redirect to profile page after deleting address    
 
 
@@ -463,7 +522,7 @@ def view_cart(request):
         'total': total,
     })
 
-
+ 
 
 def remove_from_cart(request, cart_id):
     cart_item = get_object_or_404(Cart, id=cart_id, user=request.user)
@@ -473,101 +532,66 @@ def remove_from_cart(request, cart_id):
 
 
 
+ 
+import json
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Cart
 
+from decimal import Decimal
 def update_cart_quantity(request, item_id):
     if request.method == 'POST':
-        cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
-        quantity = int(request.POST.get('quantity', 1))
+        try:
+            # Get the cart item for the current user
+            cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
+            data = json.loads(request.body)
+            quantity = data.get('quantity', 1)
+            quantity = int(quantity)
 
-        if quantity > cart_item.variant.stock:
-            messages.error(request, f"Only {cart_item.variant.stock} units available in stock.")
-        elif quantity>5:
-                messages.error(request, "Your are allowed to add  max 5 items to the cart.")
+            # Check stock and quantity limits
+            if quantity > cart_item.variant.stock:
+                return JsonResponse({'success': False, 'error': f"Only {cart_item.variant.stock} units available in stock."})
+            elif quantity > 5:
+                return JsonResponse({'success': False, 'error': "You are allowed to add a maximum of 5 items to the cart."})
+            elif quantity < 1:
+                return JsonResponse({'success': False, 'error': "Quantity must be at least 1."})
+            else:
+                # Update the cart item's quantity
+                cart_item.quantity = quantity
+                cart_item.save()
 
-        elif quantity < 1:
-            messages.error(request, "Quantity must be at least 1.")
-        else:
-            cart_item.quantity = quantity
-            cart_item.save()
-            messages.success(request, "Cart updated successfully.")
+                # Calculate new totals
+                subtotal = sum(
+                    Decimal(item.variant.price) * Decimal(item.quantity) for item in Cart.objects.filter(user=request.user)
+                )
+                discount_total = sum(
+                    (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100) * Decimal(item.quantity))
+                    for item in Cart.objects.filter(user=request.user) if item.variant.product.discount > 0
+                )
+                
+                shipping_cost = Decimal(5.00)  # Use Decimal for shipping cost
 
-    return redirect('view_cart')
+                # Calculate the total
+                total = subtotal - discount_total + shipping_cost
+
+                return JsonResponse({
+                    'success': True,
+                    'subtotal': str(subtotal),  # Convert to string for JSON response
+                    'discount_total': str(discount_total),  # Convert to string for JSON response
+                    'total': str(total),  # Convert to string for JSON response
+                    'item_total': str(Decimal(cart_item.variant.price) * Decimal(quantity)),  # Convert to string for JSON response
+                })
+
+        except ValueError:
+            return JsonResponse({'success': False, 'error': "Invalid quantity."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': "Invalid request method."})
+
 
 
  
-
-
-# #check_out view
-# @login_required
-# def checkout(request):
-#     cart_items = Cart.objects.filter(user=request.user)
-#     if not cart_items.exists():
-#         messages.error(request, "Your cart is empty. Please add items before checkout.")
-#         return redirect('cart')
-    
-#     # Reuse calculations from view_cart
-#     subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
-#     discount_total = sum(
-#         (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
-#         for item in cart_items if item.variant.product.discount > 0
-#     )
-
-
-#     coupon_discount = Decimal('0.00')
-#     applied_coupon = None 
-#     coupon_id = request.session.get('applied_coupon_id') 
-#     if coupon_id:
-#         try: 
-#             user_coupon = UserCoupon.objects.get( user=request.user, coupon_id=coupon_id, is_used=False, )
-#             coupon =user_coupon.coupon
-
-#             #verfiy coupon is still valid
-#             current_time=now()
-#             if(coupon.start_date<=current_time<=coupon.end_date and coupon.usage_count< coupon.usage_limit and coupon.is_active):
-
-#                 applied_coupon=coupon
-#                 # Calculate coupon discount on remaining amount after product discounts
-#                 discountable_amount=subtotal-discount_total
-#                 coupon_discount = (discountable_amount * Decimal(coupon.discount_percent) / 100)
-#             else:
-#                 #Remove invalid coupon from session
-#                 request.session.pop('applied_coupon_id', None) 
-#                 messages.error(request, "Coupon is no longer valid.")
-#         except UserCoupon.DoesNotExist:
-#             request.session.pop('applied_coupon_id', None)                  
-    
-#     shipping_cost = Decimal('5.00')
-     
-#     total = subtotal - discount_total - coupon_discount + shipping_cost
-    
-
-#     addresses = Address.objects.filter(user=request.user)
-
-#     if request.method == 'POST':
-#         selected_address_id = request.POST.get('address_id')
-#         if selected_address_id:
-#             address = get_object_or_404(Address, id=selected_address_id, user=request.user)
-#             return redirect('place_order_from_cart', address_id=address.id)
-#         else:
-#             address_form = AddressForm(request.POST)
-#             if address_form.is_valid():
-#                 address = address_form.save(commit=False)
-#                 address.user = request.user
-#                 address.save()
-#                 return redirect('place_order_from_cart', address_id=address.id)
-
-#     return render(request, 'checkout.html', {
-#         'cart_items': cart_items,
-#         'addresses': addresses,
-#         'address_form': AddressForm(),
-#         'subtotal': subtotal,
-#         'discount_total': discount_total,
-#         'total': total,
-#         'applied_coupon': applied_coupon,
-#         'shipping_cost': shipping_cost,
-#         'discount_total': discount_total,
-   
-#     })
 
 
 
@@ -586,6 +610,9 @@ def add_to_wishlist(request, products_id=None, variant_id=None):
         messages.info(request, "Item is already in your wishlist.")
     return redirect('wishlist')
 
+
+
+
 @login_required
 def remove_from_wishlist(request, wishlist_id):
     wishlist_item = get_object_or_404(Wishlist, id=wishlist_id, user=request.user)
@@ -593,11 +620,17 @@ def remove_from_wishlist(request, wishlist_id):
     messages.success(request, "Item removed from your wishlist.")
     return redirect('wishlist')
 
+
+
 @login_required
 def wishlist(request):
     wishlist_items = Wishlist.objects.filter(user=request.user)
     context = {'wishlist_items': wishlist_items}
     return render(request, 'wishlist.html', context)
+ 
+
+
+
 
 @login_required
 def manage_address(request):
@@ -611,7 +644,7 @@ def manage_address(request):
     else:
         form = AddressForm()
 
-    return render(request, 'manage_address.html', {'form': form})
+    return render(request, 'manage_address_checkout.html', {'form': form})
 
 
   
@@ -665,13 +698,20 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import razorpay
 
+from django.http import JsonResponse
+
 @csrf_exempt
 @login_required
 def checkout(request):
-    cart_items = Cart.objects.filter(user=request.user)
+    cart_items = Cart.objects.filter(user=request.user).select_related('variant')
     if not cart_items.exists():
         messages.error(request, "Your cart is empty. Please add items before checkout.")
         return redirect('cart')
+    
+    for item in cart_items:
+        if item.variant.stock < item.quantity:
+            messages.error(request, f"Not enough stock for {item.variant.product}. Only {item.variant.stock} units available.")
+            return redirect('view_cart')
 
     coupon_id = request.session.get('applied_coupon_id')
     subtotal, discount_total, coupon_discount, applied_coupon, shipping_cost, total = calculate_totals(cart_items, coupon_id, request.user)
@@ -689,13 +729,19 @@ def checkout(request):
     total_paise = int(total * 100)
 
     addresses = Address.objects.filter(user=request.user)
-
+    
     if request.method == 'POST':
         selected_address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
         
         if selected_address_id:
             address = get_object_or_404(Address, id=selected_address_id, user=request.user)
+            
+            # Restrict COD for orders above ₹1000
+            if payment_method == 'COD' and total > 1500:
+                messages.error(request, "Cash on Delivery is not available for orders above ₹1500.")
+                return redirect('checkout')
+
             if payment_method == 'Online' and total_paise > 0:
                 # Generate Razorpay order
                 razorpay_order = create_razorpay_order(total_paise)
@@ -739,6 +785,17 @@ def place_order_from_cart(request, address_id):
     subtotal, discount_total, coupon_discount, applied_coupon, shipping_cost, total = calculate_totals(cart_items, coupon_id, request.user)
 
     address = get_object_or_404(Address, id=address_id, user=request.user)
+
+    address_snapshot={
+        'user':request.user.id,
+        'address_line_1':address.address_line_1,
+        'address_line_2':address.address_line_2,
+        'city':address.city,
+        'state':address.state,
+        'postal_code':address.postal_code,
+        'country':address.country,
+    }
+
     payment_method = request.session.get('payment_method', 'COD')
     razorpay_order_id = request.session.get('razorpay_order_id', '')
 
@@ -751,22 +808,28 @@ def place_order_from_cart(request, address_id):
             wallet.deduct_funds(total)
             wallet_amount_used = total
             total = 0
-            payment_status = 'Paid'
         else:
-            total -= wallet_amount
+            wallet_amount_used=wallet_amount
             wallet.deduct_funds(wallet_amount)
-            wallet_amount_used = wallet_amount
-            payment_status = 'Pending'
-    else:
-        payment_status = 'Pending'
-        
-    if payment_method == 'Online' and total == 0:
-        payment_status == 'Paid'
+            total -= wallet_amount
 
+    if total==0:
+        payment_status="Paid"
+    elif payment_method=="Online":
+        razorpay_payment_id=request.session.get('razorpay_payment_id',None)
+        if razorpay_payment_id:
+            payment_status="Paid"
+        else:
+            payment_status="Failed"
+    elif payment_method=="COD":
+        payment_status="Pending"                        
+     
+    print(payment_status)
 
     order = Order.objects.create(
         user=request.user,
         address=address,
+        address_snapshot=address_snapshot,  # Save the address snapshot
         total_price=total,
         wallet_amount_used=wallet_amount_used,
         payment_method=payment_method,  # Use the payment method from the session
@@ -802,6 +865,11 @@ def place_order_from_cart(request, address_id):
             description=f"Purchase for order {order.id}"
         )
 
+
+    if payment_status == "Failed":
+        messages.error(request, "Payment failed. Please complete the payment from the 'My Orders' page.")
+        return redirect('checkout') 
+    
     cart_items.delete()
     request.session.pop('applied_coupon_id', None)
     request.session.pop('payment_method', None)
@@ -830,6 +898,7 @@ def razorpay_payment_success(request):
 
         try:
             client.utility.verify_payment_signature(params_dict)
+            request.session['razorpay_payment_id'] = payment_id
             # Signature is valid, process the order
             address_id = request.session.get('selected_address_id')
             if address_id:
@@ -853,6 +922,8 @@ def razorpay_payment_failure(request):
 @login_required
 def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
+     
+
     return render(request, 'order_confirmation.html', {
         'order': order,
         'items': order.items.all(),  # Get the related OrderItems
@@ -1021,3 +1092,152 @@ def update_order_status(request, order_id, status):
         variant.save()
 
     return JsonResponse({'success': 'Order status updated'})
+
+
+
+
+#test cases here
+ 
+      
+     
+# from django.shortcuts import get_object_or_404, redirect
+# from django.contrib import messages
+# from .models import OrderItem
+
+# def cancel_item(request, item_id):
+#     item = get_object_or_404(OrderItem, id=item_id)
+#     item.status = 'Cancelled'
+#     item.save()
+#     messages.success(request, f'Item {item.variant.product.name} has been cancelled.')
+#     return redirect('order_confirmation', order_id=item.order.id)
+
+# def return_item(request, item_id):
+#     item = get_object_or_404(OrderItem, id=item_id)
+#     item.status = 'Returned'
+#     item.save()
+#     messages.success(request, f'Item {item.variant.product.name} has been returned.')
+#     return redirect('order_confirmation', order_id=item.order.id)
+ 
+ 
+ #wallet Transaction
+
+@login_required
+def wallet_transactions(request):
+    transactions = WalletTransaction.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'wallet_transactions.html', {'transactions': transactions})
+
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+
+def download_invoice(request, order_id):
+    # Fetch order and related details
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    items = order.items.all()  # Adjust this based on your related_name
+    user = request.user
+
+    # Render HTML for the invoice
+    html = render_to_string('invoice_template.html', {
+        'order': order,
+        'items': items,
+        'user': user,
+    })
+
+    # Create a PDF response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
+
+    # Generate PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse('We had some errors generating the invoice.', status=500)
+    return response
+
+
+
+
+#test
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect, render
+from .models import OrderItem, ReturnRequest
+
+def submit_return(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+
+    # Ensure the order is eligible for return
+    if item.order.status != 'Delivered':
+        messages.error(request, 'Only items from delivered orders can be returned.')
+        return redirect('order_confirmation', order_id=item.order.id)
+
+    # Ensure no duplicate return request exists
+    if ReturnRequest.objects.filter(order_item=item).exists():
+        messages.error(request, 'A return request for this item already exists.')
+        return redirect('order_confirmation', order_id=item.order.id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        if not reason:
+            messages.error(request, 'Please provide a reason for your return.')
+            return render(request, 'submit_return.html', {'item': item})
+
+        # Create the return request with the user association
+        ReturnRequest.objects.create(
+            order_item=item,
+            reason=reason,
+            user=request.user  # Associate the return request with the user
+        )
+        messages.success(request, 'Your return request has been submitted successfully!')
+        return redirect('order_confirmation', order_id=item.order.id)
+
+    return render(request, 'submit_return.html', {'item': item})
+
+ 
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from .models import OrderItem, Order
+
+@login_required
+def cancel_item(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+
+    # Check if the order status allows cancellation
+    if item.order.status not in ['Cancelled', 'Delivered']:
+        if not item.is_cancelled:
+            try:
+                # Start a transaction to ensure consistency
+                with transaction.atomic():
+                    # Mark the item as cancelled
+                    item.is_cancelled = True
+                    item.save()
+
+                    # Restore stock for the associated variant
+                    item.variant.stock += item.quantity
+                    item.variant.save()
+
+                    # Check if all items in the order are cancelled
+                    order = item.order
+                    if all(order_item.is_cancelled for order_item in order.items.all()):
+                        order.status = 'Cancelled'
+                        order.save()
+
+                messages.success(
+                    request,
+                    f"Order item {item.variant.product.name} has been cancelled."
+                )
+            except Exception as e:
+                messages.error(request, f"An error occurred while cancelling the item: {e}")
+        else:
+            messages.warning(request, "This item is already cancelled.")
+    else:
+        messages.error(
+            request,
+            "This order item cannot be cancelled as the order is already delivered or cancelled."
+        )
+
+    # Redirect to the order confirmation page
+    return redirect('order_confirmation', order_id=item.order.id)

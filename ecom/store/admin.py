@@ -24,7 +24,7 @@ class ProductImageInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     """Admin configuration for Product."""
-    list_display = ('name', 'stock', 'price', 'brand', 'is_active', 'category', 'display_thumbnail', 'product_images')
+    list_display = ('name', 'price', 'brand', 'is_active', 'category', 'display_thumbnail', 'product_images')
     inlines = [ProductImageInline]  # Inline for managing related images
 
     @admin.display(description='Thumbnail')

@@ -8,14 +8,19 @@
             <h4 class="mb-0">Order #{{ order.id }}</h4>
         </div>
         <div class="card-body">
+             
             <p><strong>Status:</strong> {{ order.status }}</p>
-            <p><strong>Delivery Address:</strong> {{ order.address }}</p>
-            <p><strong>Phone:</strong> {{ user.phone_number}}</p>
+          
+            
+            <p><strong>Delivery Address:</strong> {{ order.address_snapshot.address_line_1 }},{{ order.address_snapshot.address_line_2 }}-{{ order.address_snapshot.postal_code }}</p>
+            <p><strong>Phone:</strong> {{ user.phone_number }}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
             <p><strong>Wallet amount used:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
-            <p>Payment Status: {{ order.payment_status }}
-            <p>Payment Type: {{ order.payment_method }}
-
+            <p><strong>Coupon used:</strong> {{ order.applied_coupon.discount_percent }}% Discount</p>
+            <p>Payment Status: {{ order.payment_status }}</p>
+            <p>Payment Type: {{ order.payment_method }}</p>
+            <p><strong>Date:</strong> {{ order.created_at }}</p>
+ 
             <h5>Items in Your Order:</h5>
             <ul class="list-group">
                 {% for item in items %}
@@ -24,20 +29,48 @@
                         <h6 class="mb-0">{{ item.variant.product.name }}</h6>
                         <small class="text-muted">
                             {{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB
+                            <p><strong>Return Status:</strong>
+                                {% if item.return_requests.count > 0 %}
+                                    {% for request in item.return_requests.all %}
+                                        {{ request.status }} {% if not forloop.last %} | {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    Not Applicable
+                                {% endif %}
+                            </p>
+
                         </small>
                     </div>
+
                     <div>
                         <span class="text-muted">x {{ item.quantity }}</span>
                         <strong class="d-block">${{ item.total_cost|floatformat:2 }}</strong>
                     </div>
+
+                    <div>
+                        {% if not item.is_cancelled and order.status != 'Cancelled' and order.status != 'Delivered' and order.status != 'Returned' %}
+                        <form method="post" action="{% url 'cancel_item' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                        </form> 
+                        {% endif %}
+                        {% if item.return_requests.count == 0 and order.status == "Delivered" %}
+                        <form method="post" action="{% url 'submit_return' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-sm">Return</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    
                 </li>
                 {% endfor %}
             </ul>
+
+            <a href="{% url 'download_invoice' order.id %}" class="btn btn-primary mt-4">Download Invoice</a>
         </div>
         <div class="card-footer">
             <p>Thank you for your order! Your order will be processed shortly.</p>
         </div>
     </div>
 </div>
-
 {% endblock %}

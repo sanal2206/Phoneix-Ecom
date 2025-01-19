@@ -1,0 +1,51 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Manage Return Requests</strong></h1>
+
+    {% if messages %}
+    <div class="alert alert-info">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Return Requests List</h4>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for request in return_requests %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ request.order_item.variant.product.name }}</strong>
+                        <p>Reason: {{ request.reason }}</p>
+                        <p>Requested by: {{ request.user.email }}</p>
+                        <p>Requested on: {{ request.created_at|date:"d M Y, H:i" }}</p>
+                        <p>Status: {{ request.status }}</p>
+                    </div>
+                    <div>
+                        <form method="post" action="{% url 'update_return_request' request.id %}">
+                            {% csrf_token %}
+                            <select name="status" class="form-select">
+                                <option value="Pending" {% if request.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Approved" {% if request.status == 'Approved' %}selected{% endif %}>Approved</option>
+                                {% comment %} <option value="Rejected" {% if request.status == 'Rejected' %}selected{% endif %}>Rejected</option> {% endcomment %}
+                                <option value="Rejected" {% if request.status == 'Rejected' %}selected{% endif %} 
+                                {% if request.status == 'Approved' %}disabled{% endif %}>Rejected</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm mt-2" style="width:150px">Update</button>
+                        </form>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="list-group-item">No return requests available.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

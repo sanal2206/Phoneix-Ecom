@@ -55,7 +55,7 @@
 
 </style>
 {% if user.is_superuser %}
-<h1 class="text-center">Colors</h1>
+<h1 class="text-center">Coupons</h1>
 
 <!-- Color Table -->
 <div class="table-container" style="text-align: center; padding: 20px;">
@@ -63,22 +63,24 @@
     <thead style="background-color: #007bff; color: white;">
       <tr>
         <th>#</th>
-        <th>Color</th>
-        <th>Color Logo</th>
+        <th>Coupon</th>
+        <th>Usage Count</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
-      {% for color in colors %}
+      {% for coupon in coupons %}
         <tr>
           <td>{{ forloop.counter }}</td>
-          <td>{{ color.colour|upper }}</td>
+          <td>{{ coupon.code|upper }}</td>
+          <td>{{ coupon.usage_count }}</td>
           <td>
             <!-- Color Logo (e.g., a circle with color) -->
             <div style="width: 30px; height: 30px; background-color: {{ color.colour|lower }}; border-radius: 50%;"></div>
 
             
 
-            <form method="post" action="{% url 'delete_colour' color.id %}">
+            <form method="post" action="{% url 'delete_coupon' coupon.id %}">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete? This action cannot be undone.')">Delete</button>
             </form>
@@ -91,7 +93,7 @@
   <br>
   <br>
   
-<a href="{% url 'add_color' %}" class="btn btn-primary">Add New Color</a>
+<a href="{% url 'add_coupon' %}" class="btn btn-primary">Add New Coupon</a>
  
 </div>
  

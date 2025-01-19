@@ -30,6 +30,38 @@
             .content {
                 flex: 1; /* Allow main content to grow and fill space */
             }
+
+            /* Success message */
+            .alert-success {
+                background-color: #d4edda;
+                color: #155724;
+            }
+
+            /* Error message */
+            .alert-danger {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+
+            /* Info message */
+            .alert-info {
+                background-color: #d1ecf1;
+                color: #0c5460;
+            }
+
+            /* Warning message */
+            .alert-warning {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+
+            /* Button close styling */
+            .btn-close {
+                background-color: transparent;
+                border: none;
+                color: inherit;
+                font-size: 1.2rem;
+            }
         </style>
     </head>
     <body>
@@ -38,12 +70,14 @@
          
         <!-- Messages -->
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
+            <div class="container">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
 
         <!-- Main Content -->

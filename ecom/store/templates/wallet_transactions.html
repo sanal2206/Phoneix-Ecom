@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">Wallet Transactions</h2>
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th style="border: 1px solid #ddd; padding: 10px;">Date</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Transaction Type</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Amount</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+        <tr style="background-color: {% cycle '#fff' '#f9f9f9' %};">
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ transaction.created_at|date:"Y-m-d H:i" }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ transaction.get_transaction_type_display }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">₹{{ transaction.amount }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ transaction.description }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" style="text-align: center; border: 1px solid #ddd; padding: 10px;">No transactions found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

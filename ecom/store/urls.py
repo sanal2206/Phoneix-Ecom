@@ -14,11 +14,13 @@ urlpatterns = [
     path("resend-otp", views.resend_otp, name="resend-otp"),
     path('product/<int:pk>', views.product, name='product'),
     path('category/<str:cat>', views.category, name='category'),
+    path('brand/<str:brand_name>/', views.brand_view, name='brand'),  # URL for brand filter
+
 
     # Profile
     path('profile/', views.user_profile, name='user_profile'),
     path('add-address/', views.add_address, name='add_address'),
-    path('manage-address/', views.manage_address, name='add_address'),
+    # path('manage-address/', views.manage_address, name='add_address'),
     path('manage-address-profile/<int:address_id>/', views.manage_address_profile, name='manage_address_profile'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
     path('update-profile/', views.update_profile, name='update_profile'),
@@ -50,13 +52,27 @@ urlpatterns = [
 
     # Wishlist
     path('wishlist/', views.wishlist, name='wishlist'),
-    path('wishlist/add/<int:products_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+    # path('wishlist/add/<int:products_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+    path('add-to-wishlist/<int:products_id>/<int:varinat_id>', views.add_to_wishlist,name='add_to_wishlist'),
     path('wishlist/remove/<int:wishlist_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('view_profile/', views.view_profile, name='view_profile'),
 
     # Payment
     path('payment/success/', views.razorpay_payment_success, name='razorpay_payment_success'),
     path('payment/failure/', views.razorpay_payment_failure, name='razorpay_payment_failure'),
+    path('wallet/transactions/', views.wallet_transactions, name='wallet_transactions'),
+
+  
+
+    path('download-invoice/<int:order_id>/', views.download_invoice, name='download_invoice'),
+
+    #test
+ 
+    path('submit-return/<int:item_id>/', views.submit_return, name='submit_return'),
+    path('cancel-item/<int:item_id>/', views.cancel_item, name='cancel_item'),
+
+
+
 ]
 
 # Static files (images, CSS, JavaScript, etc.) 

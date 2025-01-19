@@ -12,7 +12,7 @@ from django_countries.fields import CountryField
 from image_cropping import ImageCropField, ImageRatioField
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-
+import re
 # Category of products
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -65,7 +65,7 @@ class Address(models.Model):
         ]
     )
     country = models.CharField(max_length=100)
-
+ 
 
 
     def __str__(self):
@@ -92,6 +92,13 @@ class Colour(models.Model):
     is_deleted = models.BooleanField(default=False)  # Soft delete flag
 
 
+    def clean(self):
+        if not re.match(r'^[a-zA-Z\s]+$', self.colour):
+            raise ValidationError("Color name must only contain letters and spaces.")
+
+
+        if Colour.objects.filter(colour__iexact=self.colour).exists():
+            raise ValidationError(f"The colour '{self.colour}' already exists (case-insensitive).")
 
     def __str__(self):
         return self.colour
@@ -105,16 +112,65 @@ class Storage(models.Model):
 
     def __str__(self):
         return f"{self.capacity} GB"
+    
+class Brand(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()  # Convert the name to lowercase before saving
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+   
+
+class TypeCategory(models.Model):
+    name = models.CharField(max_length=100,unique=True)
+    is_active = models.BooleanField(default=True)  # For soft delete functionality
+    created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
+
+
+
+    def clean(self):
+        #Remove leading/trailing whitespace
+
+        self.name=self.name.strip()
+
+
+        #check for empty name
+        if not self.name:
+            raise ValidationError("Type category name cannot be empty.")
+        
+
+        #check for reserved names
+        reserved_names=['None','Default','Category']
+        if self.name.lower() in [reserved.lower() for reserved in reserved_names]:
+            raise ValidationError(f"'{self.name}' is a reserved name and cannot be used.")
+        
+        #check for special characters
+        if not self.name.isalnum() and " " not in self.name:
+            raise ValidationError('Category name can only contain letters,nambers and spaces')
+        
+
+
+    def save(self,*args,**kwargs):
+        #call clean method to apply validations
+        self.full_clean()
+        super().save(*args,**kwargs)
+
+    def __str__(self):
+        return self.name    
 
 #Products
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(default=0, decimal_places=2, max_digits=10)
-    brand = models.CharField(max_length=50,default='')
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name="products",null=True,blank=True)  # ForeignKey to Brand model
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default=1,related_name="products")
     description = models.TextField(default='', blank=True, null=True)
     thumbnail = ResizedImageField(upload_to='uploads/product/',size=[300, 250], default='uploads/product/lap.jpg',crop=['middle', 'center'], force_format='JPEG')
-    stock = models.PositiveIntegerField(default=0)  # For product stock
+    # stock = models.PositiveIntegerField(default=0)  # For product stock
+    type_category = models.ForeignKey(TypeCategory, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)  # For soft delete functionality
     is_deleted = models.BooleanField(default=False)  # Soft delete flag
     created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
@@ -192,7 +248,8 @@ class Coupon(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     usage_limit = models.PositiveIntegerField(default=1)
-    usage_count = models.PositiveIntegerField(default=0)
+    usage_count = models.PositiveIntegerField(default=0) 
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
         if self.start_date >= self.end_date:
@@ -207,6 +264,8 @@ class Coupon(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.discount_percent}%"
+    
+
     
 
 
@@ -282,8 +341,11 @@ class Order(models.Model):
         ('Online','Online Payment')
     ]
 
+ 
+
     user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='orders')
     address=models.ForeignKey(Address,on_delete=models.SET_NULL,null=True,blank=True,related_name='address_orders')
+    address_snapshot = models.JSONField(null=True, blank=True)  # Store address details as JSON
     status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='Processing')
     payment_method=models.CharField(max_length=10,choices=PAYMENT_CHOICES,default='COD')
     applied_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True) 
@@ -291,11 +353,10 @@ class Order(models.Model):
     wallet_amount_used = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
-    #online payement
     
+    #online payement
     razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
     razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
-
     payment_status = models.CharField(max_length=20, default='Pending', choices=[
         ('Pending', 'Pending'),
         ('Paid', 'Paid'),
@@ -322,30 +383,63 @@ class Order(models.Model):
      
     
 
-
 class OrderItem(models.Model):
-    order=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='items')
-    variant=models.ForeignKey(Variant,on_delete=models.CASCADE,related_name='order_items')
-    quantity=models.PositiveIntegerField()
-    price=models.DecimalField(max_digits=10,decimal_places=2)
+   
+ 
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='order_items')
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_cancelled = models.BooleanField(default=False)
+   
+
 
     def __str__(self):
         return f"{self.variant.product.name} {self.variant.colour.colour} {self.variant.storage.capacity}GB-Qty:{self.quantity}"
     
+    @property
     def total_cost(self):
-        return self.price*self.quantity
+        return self.price * self.quantity
+
+    def cancel_item(self): 
+        if self.order.status not in ['Cancelled', 'Delivered']: 
+            self.is_cancelled = True 
+            self.save() 
+        else:
+            raise ValueError('Item cannot be cancelled')
+
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected')
+    ]
+
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='return_requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    reason = models.TextField() 
+    is_refunded = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Return Request for {self.order_item.variant.product.name} by {self.user.email}"
+    
 
 
-
+ 
 
 class Wishlist(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlist_items')
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='wishlist_items', null=True)
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.email} - {self.product.name}"
+        return f"{self.user.email} - {self.variant}"
 
+    def variant_price(self):
+        return self.variant.price
 
  
 

@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.models import User
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden,HttpResponse
 from django.contrib import messages
 from django.shortcuts import render
-from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order,OrderItem
+from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order,OrderItem,Wallet,WalletTransaction,Brand,Coupon,TypeCategory
 from django.contrib.auth.views import LoginView
 from store.forms import ReviewForm
-from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm
-
+from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm,BrandForm,CouponForm,TypeCategoryForm
+ 
 
 class AdminLoginView(LoginView):
     template_name = 'admin_login.html'
@@ -22,25 +22,97 @@ class AdminLoginView(LoginView):
             return HttpResponseForbidden("You are not authorized to access this area.")
 
 
-def admin_dashboard(request):
+# def admin_dashboard(request):
 
-    total_users = CustomUser.objects.count()  # Count of all users
-    total_categories = Category.objects.count()  # Count of all categories
-    total_products = Product.objects.count()  # Count of all products
-    total_variants=Variant.objects.count()
-    total_orders=Order.objects.count()
+#     total_users = CustomUser.objects.count()  # Count of all users
+#     total_categories = Category.objects.count()  # Count of all categories
+#     total_products = Product.objects.count()  # Count of all products
+#     total_variants=Variant.objects.count()
+#     total_orders=Order.objects.count()
      
+#     context = {
+#         'total_users': total_users,
+#         'total_categories': total_categories,
+#         'total_products': total_products,
+#         'total_variants':total_variants,
+#         'total_orders':total_orders,
+#     }
+         
+    
+#     return render(request, 'dashboard.html', context)
+ 
+
+# views.py
+from django.shortcuts import render
+from django.db.models import Sum, Count
+from datetime import datetime
+from store.models import CustomUser, Category, Product, Order, OrderItem, Variant
+from django.utils import timezone
+from django.db.models import Sum
+
+def admin_dashboard(request):
+     # or redirect to a suitable page
+
+    total_users = CustomUser.objects.count()
+    total_categories = Category.objects.count()
+    total_products = Product.objects.count()
+    total_variants = Variant.objects.count()
+    total_orders = Order.objects.count()
+
+    # Get the current time as a timezone-aware datetime
+    today = timezone.now()
+
+    # Get the top 10 best-selling products
+    best_selling_products = (
+        OrderItem.objects
+        .values('variant__product__name')
+        .annotate(total_sales=Sum('quantity'))
+        .order_by('-total_sales')[:10]
+    )
+
+    # Get the top 10 best-selling categories
+    best_selling_categories = (
+        OrderItem.objects
+        .values('variant__product__category__name')
+        .annotate(total_sales=Sum('quantity'))
+        .order_by('-total_sales')[:10]
+    )
+
+    # Get the top 10 best-selling brands
+    best_selling_brands = (
+        OrderItem.objects
+        .values('variant__product__brand__name')
+        .annotate(total_sales=Sum('quantity'))
+        .order_by('-total_sales')[:10]
+    )
+
+    # Logic for filtering sales data for charts
+    filter_option = request.GET.get('filter', 'monthly')  # Default to monthly
+    if filter_option == 'yearly':
+        start_date = today.replace(month=1, day=1)  # Start of the year
+    else:  # Default is monthly
+        start_date = today.replace(day=1)  # Start of the month
+
+    sales_data = (
+        Order.objects.filter(created_at__gte=start_date)
+        .annotate(total_sales=Sum('items__quantity'))
+        .values('created_at__date')
+        .order_by('created_at__date')
+    )
+
     context = {
         'total_users': total_users,
         'total_categories': total_categories,
         'total_products': total_products,
-        'total_variants':total_variants,
-        'total_orders':total_orders,
+        'total_variants': total_variants,
+        'total_orders': total_orders,
+        'best_selling_products': best_selling_products,
+        'best_selling_categories': best_selling_categories,
+        'best_selling_brands': best_selling_brands,
+        'sales_data': sales_data,
     }
-         
-    
-    return render(request, 'dashboard.html', context)
 
+    return render(request, 'dashboard.html', context)
 
 
 def logout_user(request):
@@ -186,6 +258,40 @@ def soft_delete_product(request, pk):
         return redirect('product_list')  # Replace with your product list URL name
  
 
+def add_brand(request):
+    if request.method=="POST":
+        brand_form = BrandForm(request.POST)
+        if brand_form.is_valid():
+            brand_name=brand_form.cleaned_data["name"].lower()
+
+            if Brand.objects.filter(name=brand_name).exists():
+                messages.error(request,"The brand already exists")
+
+            else:    
+                brand_form.save()
+                messages.success(request, "Brand added successfully!")
+
+            return redirect('brand_list')  # Redirect to a list of brands or another page
+    else:
+        brand_form = BrandForm()
+    return render(request,'add_brand.html', {'brand_form':brand_form})   
+
+
+
+def brand_list(request):
+    brands = Brand.objects.all()
+    return render(request, 'brand_list.html', {'brands': brands})
+
+
+
+def delete_brand(request,id):
+    brand=get_object_or_404(Brand,id=id)
+    brand.delete()  # Delete the brand from the database
+    messages.success(request, f'Brand "{brand.name}" deleted successfully.')
+    return redirect('brand_list')  # Replace with your brand list URL name  
+
+
+
 def add_color(request):
     if request.method == 'POST':
         form = ColourForm(request.POST)
@@ -205,6 +311,11 @@ def color_list(request):
     return render(request, 'color_list.html', {'colors': colors})
 
 
+def delete_colour(request,id):
+    color=get_object_or_404(Colour,id=id)
+    color.delete()  # Delete the color from the database
+    messages.success(request, f'Color "{color.colour}" deleted successfully.')
+    return redirect('color_list')  # Replace with your color list URL name
 
 def add_variant(request):
     if request.method == 'POST':
@@ -542,7 +653,7 @@ def generate_sales_report(request):
     # Calculate metrics
     total_sales_count = orders.count()
     overall_order_amount = orders.aggregate(Sum('total_price'))['total_price__sum'] or 0
-    total_coupon_deductions = orders.aggregate(Sum('wallet_amount_used'))['wallet_amount_used__sum'] or 0
+    total_coupon_deductions = orders.aggregate(Sum('applied_coupon'))['applied_coupon__sum'] or 0
 
     context = {
         'total_sales_count': total_sales_count,
@@ -563,3 +674,133 @@ def generate_sales_report(request):
             return export_to_excel(context)
 
     return render(request, 'sales_report.html', context)
+
+
+#test
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from store.models import ReturnRequest, WalletTransaction
+
+
+ 
+@login_required
+def manage_return_requests(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html')  # Handle unauthorized access
+
+    return_requests = ReturnRequest.objects.order_by('-created_at').all()  # Fetch all return requests
+    return render(request, 'manage_return_requests.html', {'return_requests': return_requests})
+
+
+
+
+@login_required
+def update_return_request(request, return_request_id):
+    return_request = get_object_or_404(ReturnRequest, id=return_request_id)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        return_request.status = new_status
+        return_request.save()
+
+        # Handle refund if the request is approved
+ 
+        if new_status == 'approved':
+            order_item=return_request.orde_item
+            variant=order_item.variant
+
+            variant.stock+=order_item.qunatity
+            variant.save()
+
+            
+             
+    
+    return redirect('manage_return_requests')  # Redirect back to the return requests management page
+
+
+def add_coupon(request):
+    if request.method == 'POST':
+        form=CouponForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Coupon created successfully.")
+            return redirect('coupon_list')
+    else:
+            form=CouponForm()
+    return render(request,'add_coupon.html',{'form':form})
+
+
+def coupon_list(request):
+    coupons=Coupon.objects.all().order_by('-created_at')
+    return render(request,'coupon_list.html',{'coupons':coupons})  
+
+
+
+
+def delete_coupon(request,coupon_id):
+    if request.method=='POST':
+        coupon=get_object_or_404(Coupon,id=coupon_id)
+        coupon.delete()
+        messages.success(request,'Coupon delete Successfully!')
+        return redirect('coupon_list')
+    else:
+        messages.error(request, "Invalid request method.")
+        return redirect('coupon_list')
+    
+
+
+
+def add_typecategory(request):
+    
+    if request.method == 'POST':
+        form=TypeCategoryForm(request.POST)
+        if form.is_valid():
+
+            #check if a category with the same name (case-insensitive )already exists
+
+            if TypeCategory.objects.filter(name__iexact=form.cleaned_data['name']).exists():
+                messages.error(request, "A category with the same name already exists.")
+            else:
+                form.save()
+                messages.success(request, "Type category created successfully.")
+                return redirect('typecategory_list')
+    else:
+        form=TypeCategoryForm()
+
+    return render(request,'add_type_category.html',{'form':form})
+
+
+def typecategory_list(request):
+    typecategories=TypeCategory.objects.all().order_by('-created_at')
+    return render(request,'typecategory_list.html',{'typecategories':typecategories})
+
+
+def toggle_typecategory_status(request,id):
+    typecategory=get_object_or_404(TypeCategory,id=id)
+    typecategory.is_active=not typecategory.is_active
+    typecategory.save()
+    return redirect('typecategory_list')
+
+
+def edit_typecategory(request,id):
+    typecategory=get_object_or_404(TypeCategory,id=id)
+    if request.method == 'POST':
+        form=TypeCategoryForm(request.POST,instance=typecategory)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Type category updated successfully.")
+            return redirect('typecategory_list')
+    else:
+        form=TypeCategoryForm(instance=typecategory)
+    return render(request,'add_type_category.html',{'form':form})
+
+
+def delete_typecategory(request,id):
+    typecategory=get_object_or_404(TypeCategory,id=id)
+    if request.method=='POST':
+        typecategory.delete()
+        messages.success(request, "Category deleted successfully!")
+        return redirect('typecategory_list')
+    return HttpResponse("Invalid request", status=400)

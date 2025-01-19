@@ -84,7 +84,7 @@
                         <p>Coupon applied: <strong>{{ applied_coupon.coupon.code }}</strong></p>
                         <form method="POST" action="{% url 'remove_coupon' %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">
+                            <button type="submit" class="btn btn-danger btn-sm" style="width:150px;height:30px;padding-top:5px" >
                                 Remove Coupon
                             </button>
                         </form>

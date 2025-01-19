@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            margin: 0;
+            color: #333;
+        }
+        header p {
+            margin: 0;
+            color: #555;
+            font-size: 14px;
+        }
+        .invoice-details, .store-details {
+            margin-bottom: 20px;
+        }
+        .invoice-details p, .store-details p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f8f8f8;
+        }
+        table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .total {
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Phoneix</h1>
+        <p>Get Smart With Phoneix</p>
+        <p>Address: 31 Main Street, Bengaluru, Karnataka, 560077</p>
+        <p>Email: support@Phoneix.com | Phone: (123) 456-7890</p>
+    </header>
+
+    <div class="invoice-details">
+        <h2>Invoice</h2>
+        <p><strong>Invoice Number:</strong> #{{ order.id }}</p>
+        <p><strong>Date:</strong> {{ order.created_at }}</p>
+        <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        <p><strong>Payment Status:</strong> {{ order.payment_status }}</p>
+    </div>
+
+    <div class="store-details">
+        <h3>Billing Details</h3>
+        <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Phone:</strong> {{ user.phone_number }}</p>
+        <p><strong>Address line1:</strong> {{ order.address_snapshot.address_line_1 }}</p>
+        <p><strong>Address line2:</strong> {{ order.address_snapshot.address_line_2 }}</p>
+        <p><strong>City:</strong> {{ order.address_snapshot.city }}</p>
+        <p><strong>State:</strong> {{ order.address_snapshot.state }}</p>
+        <p><strong>Postal Code:</strong> {{ order.address_snapshot.postal_code }}</p>
+        <p><strong>Country:</strong> {{ order.address_snapshot.country }}</p>
+    </div>
+
+    <h3>Order Details</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Variant</th>
+                <th>Quantity</th>
+                <th>Product Discount</th>
+                <th>Total Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.variant.product.name }}</td>
+                <td>{{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB</td>
+                <td>{{ item.quantity }}</td>
+                <td>
+                    {% if item.discount_percent > 0 %}
+                        {{ item.discount_percent|floatformat:2 }}% Off
+                    {% else %}
+                        None
+                    {% endif %}
+                </td>
+                <td>${{ item.total_cost|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        {% if order.applied_coupon.discount_percent > 0 %}
+            <p class="total"><strong>Coupon Used:</strong> {{ order.applied_coupon.discount_percent|floatformat:2 }}% Discount</p>
+        {% endif %}
+
+        {% if order.wallet_amount_used > 0 %}
+            <p class="total"><strong>Wallet Amount Used:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
+        {% endif %}
+        
+        <p class="total"><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+    </div>
+
+    <footer>
+        <p>Thank you for shopping with us!</p>
+    </footer>
+</body>
+</html>

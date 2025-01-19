@@ -28,10 +28,12 @@
                         <li><a class="dropdown-item" href=" ">Create New item</a></li>
 
                          <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_typecategory' %}">Create Categories</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_variant' %}">Create Variant</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_product' %}">Create Product</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_color' %}">Create Color</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_storage' %}">Create Storage</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_brand' %}">Create Brand</a></li>
                     </ul> 
                 </li>
                 <li class="nav-item dropdown">
@@ -41,11 +43,37 @@
                         <li><a class="dropdown-item" href=" ">View List</a></li>
                         <li><hr class="dropdown-divider" /></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'admin_user_list' %}">User list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'typecategory_list' %}">Type Categories list</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'product_list' %}"> Product list</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'color_list' %}">Color_list</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'variant_list' %}">Variant_list</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'storage_list' %}">Storage_list</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">category_list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">Category_list</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'brand_list' %}">Brand_list</a></li>
+                    </ul> 
+                </li>
+                   
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Actions</a>
+                
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href=" "></a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'manage_return_requests' %}">Return Request</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'deleted_product_list' %}">Deleted Product</a></li>
+                        
+                    </ul> 
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coupons</a>
+                
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href=" "></a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'add_coupon' %}">Add coupon</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'coupon_list' %}">View Coupons</a></li>
+                        
                     </ul> 
                 </li>
                 {% endif %}
@@ -56,10 +84,7 @@
                 <li class="nav-item"><a class="nav-link" href="{% url 'admin_login' %}">Login</a></li>
                 {% endif %}
             </ul>
-            {% if user.is_authenticated%}
-            <p class="nav-item"><a class="nav-link active" aria-current="page" href="{% url 'deleted_product_list' %}">Deleted Product</a></p>
-            
-            {% endif %}
+          
  
             
         </div>

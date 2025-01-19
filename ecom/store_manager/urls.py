@@ -18,13 +18,30 @@ urlpatterns = [
     path('add/colour', views.add_color, name='add_color'),
     path('add/variant', views.add_variant, name='add_variant'),
     path('add/storage', views.add_storage, name='add_storage'),
- 
+    path('add/brand',views.add_brand,name='add_brand'),
+    path('delete/brand/<int:id>',views.delete_brand,name='delete_brand'),
+    path('add/coupon',views.add_coupon,name='add_coupon'),
+    path('couponlist',views.coupon_list,name='coupon_list'),
+    path('delete/coupon/<int:coupon_id>/', views.delete_coupon, name='delete_coupon'),
 
+    path('delete/colour/<int:id>',views.delete_colour,name='delete_colour'),
+
+
+    #typeCategory
+
+    path('typecategorylist',views.typecategory_list,name='typecategory_list'),
+    path('add/typecategory',views.add_typecategory,name='add_typecategory'),
+    path('typecategory/<int:id>/toggle-status/', views.toggle_typecategory_status, name='toggle_typecategory_status'),
+    path('typecategory/<int:id>/edit/', views.edit_typecategory, name='edit_typecategory'),
+    path('typecategory/<int:id>/delete/', views.delete_typecategory, name='delete_typecategory'),
+
+
+         
     #edit
     path('edit/product/<int:product_id>/', views.edit_product, name='admin_edit_product'),
     path('edit_variant/<int:variant_id>/', views.edit_variant, name='edit_variant'),
     path('delete_variant/<int:variant_id>/',views.delete_variant,name='delete_variant'),
-   
+ 
 
     path('category/deactivate/<int:category_id>/', views.deactivate_category, name='deactivate_category'),
     path('category/activate/<int:category_id>/', views.activate_category, name='activate_category'),
@@ -55,7 +72,8 @@ urlpatterns = [
     path('productlist/', views.product_list, name='product_list'),
     path('colorlist/', views.color_list, name='color_list'),
     path('variantlist/', views.variant_list, name='variant_list'),
-    path('categorylist',views.category_list,name='category_list'),
+    path('categorylist/',views.category_list,name='category_list'),
+    path('brandlist/',views.brand_list,name='brand_list'),
 
 
     path('storage_list/', views.storage_list, name='storage_list'),
@@ -90,5 +108,10 @@ urlpatterns = [
 
     path('sales_report/<str:report_type>/', views.generate_sales_report, name='generate_sales_report'),
     path('sales_report.html/', views.generate_sales_report, name='generate_sales_report'),
+
+    path('manage-return-requests/', views.manage_return_requests, name='manage_return_requests'),
+    path('update-return-request/<int:return_request_id>/', views.update_return_request, name='update_return_request'),
+
+
     path('accounts/', include('allauth.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

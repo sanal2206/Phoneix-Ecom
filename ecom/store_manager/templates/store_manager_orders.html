@@ -28,7 +28,7 @@
                         <div class="order-details">
                             <h6 class="mb-1">Order #{{ order.id }}</h6>
                             <p class="mb-1 small text-muted">
-                                Customer: <strong>{{ order.user.email }}</strong><br>
+                                {% comment %} Customer: <strong>{{ order.user.username }}</strong><br> {% endcomment %}
                                 Status: <strong>{{ order.status }}</strong>
                             </p>
                         </div>
@@ -45,9 +45,14 @@
                                         <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
                                         <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                                         <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-                                        <option value="Returned" {% if order.status == 'Returned' %}selected{% endif %}>Returned</option>
+                                        {% comment %} <option value="Returned" {% if order.status == 'Returned' %}selected{% endif %}>Returned</option> {% endcomment %}
                                     </select>
-                                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                    <button 
+                                    type="submit" 
+                                    class="btn btn-primary btn-sm" 
+                                    onclick="return confirm('Are you sure you want to update this item?');">
+                                    Update
+                                    </button>
                                 </div>
                             </form>
                         </div>

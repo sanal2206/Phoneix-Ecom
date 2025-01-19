@@ -2,7 +2,7 @@
 
 {% block content %}
  
- 
+
 
     <!-- Single Products -->
     <div class="small-container single-product">
@@ -40,7 +40,10 @@
                 
                 <h4>Category: {{ products.category.name }}</h4>
                 <h4>Brand: {{ products.brand }}</h4>
+                {% if products.discount and products.discount > 0 %}
                 <h4>Discount: {{ products.discount }} %</h4>
+                {% endif %}
+              
                 
 
                   
@@ -56,12 +59,12 @@
                             <span>No ratings yet.</span>
                         {% endif %}
                     </p>
-                    Stock:
-                    {% if products.stock > 0 %}
+                    
+                    {% comment %} {% if products.stock > 0 %}
                         {{ product.stock }}  <span class="text-success"> In Stock</span>
                     {% else %}
                     <span class="text-danger">Out of stock</span>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
 
                     <br>
                     
@@ -75,9 +78,19 @@
                     <select id="variant-selector" name="variant_id" required>
                         <option value="" data-price="{{ products.price }}" selected>Select Variant</option>
                         {% for variant in variants %}
-                            <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
-                                {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
-                            </option>
+                        <option 
+                        value="{{ variant.id }}" 
+                        data-price="{{ variant.price }}" 
+                        data-stock="{{ variant.stock }}"
+                        {% if variant.stock == 0 %} disabled style="color: red;" {% else %} style="color: green;" {% endif %}>
+                        {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
+                        {% if variant.stock > 0 %}
+                            In Stock -{{ variant.stock }}
+                        {% else %}
+                            Out of Stock
+                        {% endif %}
+                    </option>
+                    
                         {% endfor %}
                     </select>
                 
@@ -88,12 +101,10 @@
                     <input type="number" name="quantity" value="1" min="1" id="quantity" required>
                 
                     <button type="submit" class="btn btn-outline-dark mt-auto">Add to Cart</button>
+                    
                 </form>
 
-                <form method="POST" action="{% url 'add_to_wishlist' products_id=products.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-dark mt-auto">Add to Wishlist</button>
-                </form>
+                
                 
                 <script>
                     const variantSelector = document.getElementById('variant-selector');
@@ -142,11 +153,37 @@
             <div class="col-md-6">
                 <h3>Submit Your Review</h3>
                 {% if user.is_authenticated %}
-                    <form method="post">
+                    {% comment %} <form method="post">
                         {% csrf_token %}
                         {{ form.as_p }}  <!-- Display the review form -->
                         <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </form> {% endcomment %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Comment Field -->
+                        <div class="mb-3">
+                            <label for="id_comment" class="form-label">Comment</label>
+                            {{ form.comment }}
+                        </div>
+                        
+                        <!-- Rating Field -->
+                        <div class="mb-3">
+                            <label class="form-label">Rating</label>
+                            <div class="d-flex justify-content-start">
+                                {% for radio in form.rating %}
+                                    <div class="form-check form-check-inline">
+                                        {{ radio.tag }}
+                                        {{ radio.choice_label }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary " style="width:200px; background-color:purple">Submit Review</button>
                     </form>
+                    
                 {% else %}
                     <p>Please <a href="{% url 'login' %}">Log in here</a> to submit your review.</p>
                 {% endif %}
@@ -202,50 +239,7 @@
         {% endfor %}
     </div>
 </div>
-{% comment %} 
-
-    <!-- Footer -->
-    <div class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="footer-col-1">
-                    <h3>Download Our App</h3>
-                    <p>Download App for Android and ios mobile phone.</p>
-                    <div class="app-logo">
-                        <img src="images/play-store.png">
-                        <img src="images/app-store.png">
-                    </div>
-                </div>
-                <div class="footer-col-2">
-                    <img src="images/logo-white.png">
-                    <p>Our Purpose Is To Sustainably Make the Pleasure and Benefits of Sports Accessible to the Many.
-                    </p>
-                </div>
-                <div class="footer-col-3">
-                    <h3>Useful Links</h3>
-                    <ul>
-                        <li>Coupons</li>
-                        <li>Blog Post</li>
-                        <li>Return Policy</li>
-                        <li>Join Affiliate</li>
-                    </ul>
-                </div>
-                <div class="footer-col-4">
-                    <h3>Follow Us</h3>
-                    <ul>
-                        <li>Facebook</li>
-                        <li>Twitter</li>
-                        <li>Instagram</li>
-                        <li>Youtube</li>
-                    </ul>
-                </div>
-            </div>
-            <hr>
-            <p class="copyright">Copyright 2020 - Samwit Adhikary</p>
-        </div>
-    </div> {% endcomment %}
-
-    <!-- javascript -->
+ 
 
     <script>
         var MenuItems = document.getElementById("MenuItems");

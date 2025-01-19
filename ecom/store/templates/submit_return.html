@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Submit Return Request</strong></h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Return Item: {{ item.variant.product.name }}</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Item:</strong> {{ item.variant.product.name }}</p>
+            <p><strong>Details:</strong> {{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB</p>
+            <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="reason">Reason for Return:</label>
+                    <textarea name="reason" id="reason" class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-warning mt-3" style="width:250px">Submit Return Request</button>
+                <a href="{% url 'order_confirmation' item.order.id %}" class="btn btn-secondary mt-3"style="width:250px;background-color:green;">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

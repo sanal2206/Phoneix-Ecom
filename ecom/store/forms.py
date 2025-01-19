@@ -34,13 +34,34 @@ class SignUpForm(UserCreationForm):
 		self.fields['password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'
 		
 
+# class ReviewForm(forms.ModelForm):
+#     class Meta:
+#         model = Review
+#         fields = ['comment', 'rating']
+#         widgets = {
+#             'comment': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write your review'}),
+#             'rating': forms.RadioSelect(choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]),
+#         }
+
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
         fields = ['comment', 'rating']
         widgets = {
-            'comment': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write your review'}),
-            'rating': forms.RadioSelect(choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]),
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Write your review',
+                'rows': 6,
+            }),
+            'rating': forms.RadioSelect(attrs={
+                'class': 'form-check-inline rating-options'
+            }, choices=[
+                (1, '1'),
+                (2, '2'),
+                (3, '3'),
+                (4, '4'),
+                (5, '5'),
+            ]),
         }
 
     def clean_rating(self):
@@ -93,3 +114,10 @@ class UserProfileForm(forms.ModelForm):
         widgets = {
             'profile_photo': ImageCropWidget(),
         }
+
+class ReturnRequestForm(forms.Form):
+    reason = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Explain the reason for the return'}),
+        label="Reason for Return",
+        required=True
+    )

@@ -20,7 +20,8 @@
 </header> 
 
 <style>
- 
+  
+<style>
     form{
         width: 500px;
         height: auto;
@@ -52,7 +53,6 @@
     form a{
       font-size:20px
   }
-
 </style>
 {% if user.is_superuser %}
 <h1 class="text-center">Colors</h1>
@@ -63,26 +63,23 @@
     <thead style="background-color: #007bff; color: white;">
       <tr>
         <th>#</th>
-        <th>Color</th>
-        <th>Color Logo</th>
+        <th>Brand</th>
+        <th>Action</th>
+       
       </tr>
     </thead>
     <tbody>
-      {% for color in colors %}
+      {% for brand in brands %}
         <tr>
           <td>{{ forloop.counter }}</td>
-          <td>{{ color.colour|upper }}</td>
+          <td>{{ brand.name }}</td>
           <td>
-            <!-- Color Logo (e.g., a circle with color) -->
-            <div style="width: 30px; height: 30px; background-color: {{ color.colour|lower }}; border-radius: 50%;"></div>
+           
 
-            
-
-            <form method="post" action="{% url 'delete_colour' color.id %}">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete? This action cannot be undone.')">Delete</button>
+            <form method="post" action="{% url 'delete_brand' brand.id %}" >
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure your want to delete ? This action cant be undone.')">Delete</button>
             </form>
-          
           </td>
         </tr>
       {% endfor %}
@@ -91,7 +88,7 @@
   <br>
   <br>
   
-<a href="{% url 'add_color' %}" class="btn btn-primary">Add New Color</a>
+<a href="{% url 'add_brand' %}" class="btn btn-primary">Add New Brand</a>
  
 </div>
  

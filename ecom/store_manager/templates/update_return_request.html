@@ -1,0 +1,20 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5"><strong>Update Return Request for {{ return_request.order_item.variant.product.name }}</strong></h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select name="status" id="status" class="form-select">
+                <option value="Pending" {% if return_request.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="Approved" {% if return_request.status == 'Approved' %}selected{% endif %}>Approved</option>
+                <option value="Rejected" {% if return_request.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Status</button>
+    </form>
+</div>
+{% endblock %}

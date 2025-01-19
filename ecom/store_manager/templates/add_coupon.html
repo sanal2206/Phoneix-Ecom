@@ -13,8 +13,8 @@
   <header class="bg-dark py-5">
     <div class="container px-4 px-lg-5 my-5">
         <div class="text-center text-white">
-            <h1 class="display-4 fw-bolder">Store Manager </h1>
-            <p class="lead fw-normal text-white-50 mb-0"> </p>
+            <h1 class="display-4 fw-bolder">Store Manager  </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Add new color</p>
         </div>
     </div>
 </header> 
@@ -68,21 +68,19 @@
 
 
 
-{% if user.is_superuser %}
+   {% if user.is_superuser %}
  
-    <h1>Add a New Storage </h1>
+    <h1>Add a New Coupon</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Add Storage</button>
+        <button type="submit" class="btn btn-primary">Add Coupon</button>
     </form>
-    <a href="{% url 'storage_list' %}">View All Storage</a>
-
+    <a href="{% url 'coupon_list' %}">View All Coupon</a>
 
     {% else %}
     <p>You are not authorized to view this form.</p>
     {% endif %}
-
   
 {% endblock content %}
 

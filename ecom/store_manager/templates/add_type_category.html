@@ -1,10 +1,6 @@
 
-
 {% extends "admin_base.html" %}
-
-
-{% comment %} {% load socialaccount%}
-{% load account %} {% endcomment %}
+ 
 
 {% block content %}
 
@@ -70,13 +66,13 @@
 
 {% if user.is_superuser %}
  
-    <h1>Add a New Storage </h1>
+    <h1>Add a New TypeCategory </h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Add Storage</button>
+        <button type="submit" class="btn btn-primary">Add Type Category</button>
     </form>
-    <a href="{% url 'storage_list' %}">View All Storage</a>
+    <a href="{% url 'typecategory_list' %}">View All TypeCategory</a>
 
 
     {% else %}
