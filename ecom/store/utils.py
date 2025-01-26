@@ -3,6 +3,7 @@ from django.utils.timezone import now
 from .models import UserCoupon
 import razorpay
 from django.conf import settings
+from .models import Offer
 
 def calculate_totals(cart_items, coupon_id=None, user=None):
     subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
@@ -10,6 +11,24 @@ def calculate_totals(cart_items, coupon_id=None, user=None):
         (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
         for item in cart_items if item.variant.product.discount > 0
     )
+
+
+     # Add type_category offers to the discount total
+    for item in cart_items:
+        if item.variant.product.type_category:
+            # Get the active offer for the TypeCategory
+            offer = Offer.objects.filter(type_category=item.variant.product.type_category, is_active=True).first()
+            if offer:
+                product_price = Decimal(item.variant.price)
+                type_category_offer_discount = Decimal(0)
+
+                if offer.offer_type == 'percentage':
+                    type_category_offer_discount = (product_price * offer.discount_value / 100) * item.quantity
+                elif offer.offer_type == 'flat':
+                    type_category_offer_discount = offer.discount_value * item.quantity
+
+                # Add to the discount total
+                discount_total += type_category_offer_discount
 
     coupon_discount = Decimal('0.00')
     applied_coupon = None

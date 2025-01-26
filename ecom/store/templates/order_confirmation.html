@@ -15,8 +15,13 @@
             <p><strong>Delivery Address:</strong> {{ order.address_snapshot.address_line_1 }},{{ order.address_snapshot.address_line_2 }}-{{ order.address_snapshot.postal_code }}</p>
             <p><strong>Phone:</strong> {{ user.phone_number }}</p>
             <p><strong>Total Price:</strong> ${{ order.total_price|floatformat:2 }}</p>
+            {% if order.wallet_amount_used %}
             <p><strong>Wallet amount used:</strong> ${{ order.wallet_amount_used|floatformat:2 }}</p>
+            {% endif %}
+
+            {% if order.applied_coupon %}
             <p><strong>Coupon used:</strong> {{ order.applied_coupon.discount_percent }}% Discount</p>
+            {% endif %}           
             <p>Payment Status: {{ order.payment_status }}</p>
             <p>Payment Type: {{ order.payment_method }}</p>
             <p><strong>Date:</strong> {{ order.created_at }}</p>
@@ -27,6 +32,9 @@
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-0">{{ item.variant.product.name }}</h6>
+                         <h6 class="mb-0">Item ID- {{ item.id }}</h6>
+
+                        
                         <small class="text-muted">
                             {{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB
                             <p><strong>Return Status:</strong>
@@ -51,13 +59,13 @@
                         {% if not item.is_cancelled and order.status != 'Cancelled' and order.status != 'Delivered' and order.status != 'Returned' %}
                         <form method="post" action="{% url 'cancel_item' item.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to Cancel the Order? This action cannot be undone.')">Cancel</button>
                         </form> 
                         {% endif %}
                         {% if item.return_requests.count == 0 and order.status == "Delivered" %}
                         <form method="post" action="{% url 'submit_return' item.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-warning btn-sm">Return</button>
+                            <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to Return The order? This action cannot be undone.')">Return</button>
                         </form>
                         {% endif %}
                     </div>

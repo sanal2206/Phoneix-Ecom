@@ -37,19 +37,26 @@
                         <span>Discount:</span>
                         <span>${{ discount_total|floatformat:2 }}</span>
                     </p>
-                    <p class="d-flex justify-content-between">
-                        <span>Wallet Bal:</span>
-                        <span>${{ user.wallet.balance|floatformat:2 }}</span>
-                    </p>
+                    
                     <p class="d-flex justify-content-between">
                         <span>Shipping:</span>
                         <span>$5.00</span>
                     </p>
                     <hr>
-                    <h5 class="d-flex justify-content-between">
-                        <span>Total:</span>
-                        <strong>${{ total|floatformat:2 }}</strong>
-                    </h5>
+                    <bt>
+                        <h5 class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong>${{ total|floatformat:2 }}</strong>
+                        </h5>
+
+                        <br>
+                    <p class="d-flex justify-content-between">
+                        <span>Available Wallet Bal:</span>
+                        <span>${{ user.wallet.balance|floatformat:2 }}</span>
+                    </p>
+
+                     
+                 
                 </div>
             </div>
         </div>
@@ -103,6 +110,18 @@
                 <div class="card-body">
                     <form method="post" action="{% url 'checkout' %}">
                         {% csrf_token %}
+
+
+                           <!-- Use Wallet Balance -->
+                <div class="form-check mb-3"> 
+                    <input 
+                        type="checkbox" 
+                        class="form-check-input" 
+                        id="use-wallet" 
+                        name="use_wallet"
+                        {% if user.wallet.balance > 0 %} {% else %} disabled {% endif %}>
+                    <label class="form-check-label" for="use-wallet">Use Wallet Balance</label>
+                </div>
                         <!-- Address Selection -->
                         <h5>Select Address</h5>
                         {% for address in addresses %}

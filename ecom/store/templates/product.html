@@ -37,13 +37,23 @@
 
                 <h1>{{ products.name }}</h1>
                 <h4>Price: $<span id="product-price">{{ products.price }}</span></h4>
-                
+ 
                 <h4>Category: {{ products.category.name }}</h4>
-                <h4>Brand: {{ products.brand }}</h4>
+                <h4>Brand: {{ products.brand|capfirst}}</h4>
                 {% if products.discount and products.discount > 0 %}
                 <h4>Discount: {{ products.discount }} %</h4>
                 {% endif %}
-              
+
+          
+                {% if offer_details %}
+                <div class="offer-details">
+                    <h3>Special Offer:</h3>
+                  <strong>  <p>Offer Type: {{ offer_details.offer_type|capfirst }}</p>
+                    <p>Discount: {{ offer_details.discount_value }} {% if offer_details.offer_type == "percentage" %}%{% else %} flat{% endif %}</p>
+                    <p>Available:  {{ offer_details.end_date|date:"d-m-Y" }}</p></strong>
+                </div>
+            
+                {% endif %}
                 
 
                   
@@ -85,7 +95,7 @@
                         {% if variant.stock == 0 %} disabled style="color: red;" {% else %} style="color: green;" {% endif %}>
                         {{ variant.colour.colour }} - {{ variant.storage.capacity }}GB
                         {% if variant.stock > 0 %}
-                            In Stock -{{ variant.stock }}
+                      
                         {% else %}
                             Out of Stock
                         {% endif %}
@@ -103,9 +113,7 @@
                     <button type="submit" class="btn btn-outline-dark mt-auto">Add to Cart</button>
                     
                 </form>
-
-                
-                
+{% comment %}                                   
                 <script>
                     const variantSelector = document.getElementById('variant-selector');
                     const productPrice = document.getElementById('product-price');
@@ -133,7 +141,65 @@
                             form.action = "{% url 'add_to_cart' products.id 0 %}"; // Reset to base URL if no variant is selected
                         }
                     });
+                </script> {% endcomment %}
+
+                <!-- Add to Wishlist Button -->
+
+                <form method="POST" id="add-to-wishlist-form" action="{% url 'add_to_wishlist' products.id 0 %}">
+                    {% csrf_token %}
+                    <button type="submit" id="wishlist-btn" class="btn btn-outline-primary mt-3">Add to Wishlist</button>
+                </form>
+               
+{% comment %}                    
+                <script>
+                    const variantSelector = document.getElementById('variant-selector');
+                    const wishlistForm = document.getElementById('add-to-wishlist-form');
+                
+                    variantSelector.addEventListener('change', function () {
+                        const selectedOption = variantSelector.options[variantSelector.selectedIndex];
+                        const selectedVariantId = selectedOption.value;
+                
+                        // Update the action URL with the selected variant ID
+                        const productId = "{{ products.id }}";
+                        wishlistForm.action = "{% url 'add_to_wishlist' 0 0 %}".replace('0', productId).replace('0', selectedVariantId);
+                    });
                 </script>
+                 {% endcomment %}
+                 <script>
+                    const variantSelector = document.getElementById('variant-selector');
+                    const productPrice = document.getElementById('product-price');
+                    const quantityInput = document.getElementById('quantity');
+                    const addToCartForm = document.getElementById('add-to-cart-form');
+                    const addToWishlistForm = document.getElementById('add-to-wishlist-form');
+                
+                    variantSelector.addEventListener('change', function () {
+                        const selectedOption = variantSelector.options[variantSelector.selectedIndex];
+                        const selectedVariantId = selectedOption.value;
+                
+                        // Update product price display
+                        const price = selectedOption.getAttribute('data-price');
+                        if (productPrice) {
+                            productPrice.textContent = price;
+                        }
+                
+                        // Update max quantity based on stock
+                        const stock = selectedOption.getAttribute('data-stock');
+                        if (quantityInput) {
+                            quantityInput.max = stock;
+                        }
+                
+                        // Update action URL for Add to Cart form
+                        const productId = "{{ products.id }}";
+                        if (selectedVariantId) {
+                            addToCartForm.action = "{% url 'add_to_cart' 0 0 %}".replace('0', productId).replace('0', selectedVariantId);
+                            addToWishlistForm.action = "{% url 'add_to_wishlist' 0 0 %}".replace('0', productId).replace('0', selectedVariantId);
+                        } else {
+                            addToCartForm.action = "{% url 'add_to_cart' products.id 0 %}";
+                            addToWishlistForm.action = "{% url 'add_to_wishlist' products.id 0 %}";
+                        }
+                    });
+                </script>
+                
                 
                
                 <h5>Product Details <i class="fa fa-indent"></i></h5>

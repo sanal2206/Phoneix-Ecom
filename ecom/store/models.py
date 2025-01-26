@@ -161,6 +161,36 @@ class TypeCategory(models.Model):
     def __str__(self):
         return self.name    
 
+
+class Offer(models.Model):
+    offer_type_choices = [
+        ('flat', 'Flat'),
+        ('percentage', 'Percentage'),
+    ]
+    
+    offer_type = models.CharField(max_length=10, choices=offer_type_choices)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)  # Flat amount or percentage
+    type_category = models.ForeignKey(TypeCategory, on_delete=models.SET_NULL, null=True, blank=True)  # Linked to TypeCategory
+    is_active = models.BooleanField(default=True)  # Indicates if the offer is active
+    start_date = models.DateTimeField()  # Start date for the offer
+    end_date = models.DateTimeField()  # End date for the offer
+    def __str__(self):
+        return f"{self.offer_type.capitalize()} offer for {self.type_category.name if self.type_category else 'All'}: {self.discount_value} discount"
+    
+    def is_active_offer(self):
+        """Checks if the offer is active and within the valid date range."""
+        from django.utils import timezone
+        now = timezone.now()
+        return self.is_active and self.start_date <= now <= self.end_date
+    
+    @classmethod
+    def active_offers(cls):
+        """Class method to get all active offers."""
+        from django.utils import timezone
+        now = timezone.now()
+        return cls.objects.filter(is_active=True, start_date__lte=now, end_date__gte=now)
+    
+
 #Products
 class Product(models.Model):
     name = models.CharField(max_length=100)
@@ -171,6 +201,8 @@ class Product(models.Model):
     thumbnail = ResizedImageField(upload_to='uploads/product/',size=[300, 250], default='uploads/product/lap.jpg',crop=['middle', 'center'], force_format='JPEG')
     # stock = models.PositiveIntegerField(default=0)  # For product stock
     type_category = models.ForeignKey(TypeCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, null=True, blank=True)  # Link offer to product
+
     is_active = models.BooleanField(default=True)  # For soft delete functionality
     is_deleted = models.BooleanField(default=False)  # Soft delete flag
     created_at = models.DateTimeField(auto_now_add=True)  # Automatically set on creation
@@ -183,11 +215,26 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    
     def discounted_price(self):
-        """Returns the price after applying the discount percentage."""
-        if self.discount> 0:
-            return self.price - (self.price * (self.discount / 100))
-        return self.price
+        """Returns the price after applying the discount (either product or offer-based, including TypeCategory offers)."""
+        final_price = self.price
+
+        # Apply product-specific discount (if any)
+        if self.discount > 0:
+            final_price -= final_price * (self.discount / 100)
+
+        # Apply offer discount, if any, based on TypeCategory
+        if self.type_category:
+            # Check if there's an active offer linked to the product's TypeCategory
+            offer = Offer.objects.filter(type_category=self.type_category, is_active=True).first()
+            if offer:
+                if offer.offer_type == 'percentage':
+                    final_price -= final_price * (offer.discount_value / 100)
+                elif offer.offer_type == 'flat':
+                    final_price -= offer.discount_value
+
+        return max(final_price, 0)  # Ensure price does not go below zero
 
 # Product Images
 class ProductImage(models.Model):
@@ -282,7 +329,7 @@ class UserCoupon(models.Model):
 
 from django.db import models
 from django.conf import settings
- 
+from decimal import Decimal  
     
 class Wallet(models.Model):
     user = models.OneToOneField(
@@ -296,6 +343,10 @@ class Wallet(models.Model):
         self.save()
 
     def deduct_funds(self, amount):
+        if not isinstance(amount,Decimal):
+
+            amount = Decimal(str(amount))  # Convert to Decimal safely
+         
         if amount <= self.balance:
             self.balance -= amount
             self.save()

@@ -1,5 +1,5 @@
 from django.shortcuts import render,redirect,get_object_or_404,HttpResponse
-from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address,Cart,Variant,Wishlist,Wallet,Coupon,UserCoupon,Order,OrderItem,ReturnRequest,Brand,TypeCategory
+from .models import Product,Category,ProductImage,CustomUser,OtpToken,Address,Cart,Variant,Wishlist,Wallet,Coupon,UserCoupon,Order,OrderItem,ReturnRequest,Brand,TypeCategory,Offer
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django .contrib.auth import authenticate,login,logout
@@ -11,6 +11,12 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.db.models import F
+from django.template import TemplateDoesNotExist
+from django.core.exceptions import ValidationError
+
+ 
+ 
+
 
 # Create your views here.
 
@@ -67,6 +73,9 @@ def home(request):
         product.avg_rating = round(avg_rating, 1) if avg_rating else 0
         product.stars_range = range(1, 6)  # Create a range from 1 to 5 for stars
 
+     
+    
+
     # Fetch available coupons 
     available_coupons = Coupon.objects.prefetch_related('usercoupon_set').filter( 
         start_date__lte=timezone.now(),
@@ -77,9 +86,12 @@ def home(request):
 
     ).distinct()
 
+
+
     # Fetching all brands for the dropdown
     brands = Brand.objects.all()
     type_categories = TypeCategory.objects.filter(is_active=True)
+    active_offers = Offer.active_offers() 
 
     return render(request, 'home.html', {
         'products': products,
@@ -89,6 +101,7 @@ def home(request):
         'sort_by': sort_by,
         'available_coupons': available_coupons,
         'brands': brands,
+        'active_offers': active_offers
     })
 
 
@@ -103,7 +116,10 @@ def brand_view(request, brand_name):
 
 
 def about(request):
-    return render(request,'about.html',{})
+    try:
+        return render(request, 'about.html')
+    except TemplateDoesNotExist:
+        return render(request, '404.html', status=404)
 
 
  
@@ -136,9 +152,6 @@ def logout_user(request):
 
 
 #register
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from .forms import SignUpForm
 
 def register_user(request):
     form = SignUpForm()
@@ -227,13 +240,17 @@ def resend_otp(request):
             last_otp = OtpToken.objects.filter(user=user).order_by('-otp_expires_at').first()
 
             if last_otp:
-                time_since_last_otp = (timezone.now() - last_otp.otp_created_at).total_seconds() / 60
-                if time_since_last_otp < COOLDOWN_PERIOD:
-                    remaining_time = COOLDOWN_PERIOD - time_since_last_otp
+                time_since_last_otp = (timezone.now() - last_otp.otp_created_at).total_seconds()
+                cooldown_seconds = COOLDOWN_PERIOD * 60
+
+                if time_since_last_otp < cooldown_seconds:
+                    remaining_time = int(cooldown_seconds - time_since_last_otp)
+                    minutes, seconds = divmod(remaining_time, 60)
                     return JsonResponse({
                         'success': False,
-                        'message': f"Please wait {remaining_time:.1f} minutes before requesting a new OTP."
+                        'message': f"Please wait {minutes} minutes and {seconds} seconds before requesting a new OTP."
                     })
+                
 
             
             # Generate a new OTP
@@ -258,13 +275,20 @@ def resend_otp(request):
 
     return JsonResponse({'success': False, 'message': "Invalid request method."})
 
+
+
 from django.db.models import Q
-
-
 @login_required
 def product(request, pk):
     # Get the product by primary key (id)
     products = get_object_or_404(Product, id=pk, is_active=True, is_deleted=False)
+
+    offer_details=None
+    if products.type_category:
+        active_offer=Offer.objects.filter(type_category=products.type_category,is_active=True).first()
+
+        if active_offer:
+            offer_details=active_offer
     
     # Fetch images for the product
     images = ProductImage.objects.filter(product=products)
@@ -316,7 +340,9 @@ def product(request, pk):
         'reviews': reviews,
         'form': form,  # Include the form for adding reviews
         'avg_rating': avg_rating,  # Pass the average rating to the template
-        'variants': variants  # Include the product variants
+        'variants': variants,  # Include the product variants
+        'offer_details': offer_details,
+
     }
 
     return render(request, 'product.html', context)
@@ -394,29 +420,54 @@ def delete_address(request, address_id):
     return redirect('user_profile')  # Redirect to profile page after deleting address    
 
 
+from allauth.socialaccount.models import SocialAccount  # Import this if you're using Django Allauth
+
+def is_social_account(user):
+    return SocialAccount.objects.filter(user=user).exists()
+
+
 @login_required
 def update_profile(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         phone_number = request.POST.get('phone_number')
         profile_photo = request.FILES.get('profile_photo')  # Get the uploaded image
+        password = request.POST.get('password')  # Password entered by the user for confirmation
 
-        
-        # Update the logged-in user's profile
         user = request.user
+
+        if is_social_account(user):
+            # Skip password check for social accounts
+            messages.success(request, "Social account detected. Updating profile directly.")
+        else:
+            if not user.check_password(password):  # Check if the password is correct
+                messages.error(request, "Incorrect password. Please try again.")
+                return redirect('update_profile')
+
+
+        if CustomUser.objects.exclude(id=user.id).filter(username=username).exists():
+            messages.error(request, 'Username already exists. Please choose a different one.')
+            return redirect('update_profile')        
+
+        # Update the logged-in user's profile
         user.username = username
         user.phone_number = phone_number  # Ensure your user model includes this field
         if profile_photo:
             user.profile_photo = profile_photo
+
+
+        try:
+            user.full_clean()
+        except ValidationError as e:
+            messages.error(request, str(e))
+            return redirect('update_profile')  # Display the errors if any        
         
         user.save()
-
-        user.save()
-
         messages.success(request, 'Profile updated successfully!')
         return redirect('user_profile')
     
     return render(request, 'profile.html', {'user': request.user})
+
 
 
 @login_required
@@ -451,7 +502,7 @@ def add_to_cart(request, product_id, variant_id):
 
     # Check if the requested quantity exceeds available stock
     if quantity > variant.stock:
-        messages.error(request, f"Sorry, we only have {variant.stock} units of this variant in stock.")
+        messages.warning(request, f"Sorry, we only have {variant.stock} units of this variant in stock.")
         return redirect('product', pk=product.id)  # Redirect back to product page
 
     # Limit the maximum quantity per user (e.g., 5 per product/variant)
@@ -497,6 +548,33 @@ def add_to_cart(request, product_id, variant_id):
 
 
 
+# from decimal import Decimal
+
+# def view_cart(request):
+#     cart_items = Cart.objects.filter(user=request.user)
+
+#     # Calculate subtotal (price without discount) and discount total
+#     subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
+#     discount_total = sum(
+#         (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
+#         for item in cart_items if item.variant.product.discount > 0
+#     )
+    
+    
+
+#     # Convert shipping cost to Decimal
+#     shipping_cost = Decimal('5.00')
+
+#     # Calculate final total (subtotal - discount + shipping)
+#     total = subtotal - discount_total + shipping_cost
+
+#     return render(request, 'cart.html', {
+#         'cart_items': cart_items,
+#         'subtotal': subtotal,
+#         'discount_total': discount_total,
+#         'total': total,
+#     })
+
 from decimal import Decimal
 
 def view_cart(request):
@@ -504,16 +582,41 @@ def view_cart(request):
 
     # Calculate subtotal (price without discount) and discount total
     subtotal = sum(Decimal(item.variant.price) * item.quantity for item in cart_items)
-    discount_total = sum(
-        (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100)) * item.quantity
-        for item in cart_items if item.variant.product.discount > 0
-    )
+    
+    discount_total = Decimal(0)  # Initialize discount total
 
+    for item in cart_items:
+        product_price = Decimal(item.variant.price)
+        product_discount = Decimal(item.variant.product.discount)
+        type_category_offer_discount = Decimal(0)  # Default discount for TypeCategory offer
+
+        # Apply product-specific discount (if any)
+        product_discount_value = (product_price * product_discount / 100) * item.quantity
+        discount_total += product_discount_value
+
+        # Apply TypeCategory offer (if any)
+        if item.variant.product.type_category:
+            # Get the active offer for the TypeCategory
+            offer = Offer.objects.filter(type_category=item.variant.product.type_category, is_active=True).first()
+            if offer:
+                 
+                if offer.offer_type == 'percentage':
+                    type_category_offer_discount = (product_price * offer.discount_value / 100) * item.quantity
+                elif offer.offer_type == 'flat':
+                    type_category_offer_discount = offer.discount_value * item.quantity
+
+            
+
+                # Add to the discount total
+                discount_total += type_category_offer_discount
+            
+ 
     # Convert shipping cost to Decimal
     shipping_cost = Decimal('5.00')
 
     # Calculate final total (subtotal - discount + shipping)
     total = subtotal - discount_total + shipping_cost
+    print(f"Subtotal: {subtotal}, Discount Total: {discount_total}, Shipping: {shipping_cost}, Total: {total}")
 
     return render(request, 'cart.html', {
         'cart_items': cart_items,
@@ -522,7 +625,6 @@ def view_cart(request):
         'total': total,
     })
 
- 
 
 def remove_from_cart(request, cart_id):
     cart_item = get_object_or_404(Cart, id=cart_id, user=request.user)
@@ -539,6 +641,59 @@ from django.shortcuts import get_object_or_404
 from .models import Cart
 
 from decimal import Decimal
+# def update_cart_quantity(request, item_id):
+#     if request.method == 'POST':
+#         try:
+#             # Get the cart item for the current user
+#             cart_item = get_object_or_404(Cart, id=item_id, user=request.user)
+#             data = json.loads(request.body)
+#             quantity = data.get('quantity', 1)
+#             quantity = int(quantity)
+
+#             # Check stock and quantity limits
+#             if quantity > cart_item.variant.stock:
+#                 return JsonResponse({'success': False, 'error': f"Only {cart_item.variant.stock} units available in stock."})
+#             elif quantity > 5:
+#                 return JsonResponse({'success': False, 'error': "You are allowed to add a maximum of 5 items to the cart."})
+#             elif quantity < 1:
+#                 return JsonResponse({'success': False, 'error': "Quantity must be at least 1."})
+#             else:
+#                 # Update the cart item's quantity
+#                 cart_item.quantity = quantity
+#                 cart_item.save()
+
+#                 # Calculate new totals
+#                 subtotal = sum(
+#                     Decimal(item.variant.price) * Decimal(item.quantity) for item in Cart.objects.filter(user=request.user)
+#                 )
+#                 discount_total = sum(
+#                     (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100) * Decimal(item.quantity))
+#                     for item in Cart.objects.filter(user=request.user) if item.variant.product.discount > 0
+#                 )
+
+                
+
+                
+#                 shipping_cost = Decimal(5.00)  # Use Decimal for shipping cost
+
+#                 # Calculate the total
+#                 total = subtotal - discount_total + shipping_cost
+
+#                 return JsonResponse({
+#                     'success': True,
+#                     'subtotal': str(subtotal),  # Convert to string for JSON response
+#                     'discount_total': str(discount_total),  # Convert to string for JSON response
+#                     'total': str(total),  # Convert to string for JSON response
+#                     'item_total': str(Decimal(cart_item.variant.price) * Decimal(quantity)),  # Convert to string for JSON response
+#                 })
+
+#         except ValueError:
+#             return JsonResponse({'success': False, 'error': "Invalid quantity."})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': str(e)})
+
+#     return JsonResponse({'success': False, 'error': "Invalid request method."})
+
 def update_cart_quantity(request, item_id):
     if request.method == 'POST':
         try:
@@ -564,11 +719,29 @@ def update_cart_quantity(request, item_id):
                 subtotal = sum(
                     Decimal(item.variant.price) * Decimal(item.quantity) for item in Cart.objects.filter(user=request.user)
                 )
-                discount_total = sum(
-                    (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100) * Decimal(item.quantity))
-                    for item in Cart.objects.filter(user=request.user) if item.variant.product.discount > 0
-                )
-                
+                discount_total = Decimal(0)  # Initialize discount total
+
+                for item in Cart.objects.filter(user=request.user):
+                    # Check for product discount
+                    if item.variant.product.discount > 0:
+                        discount_total += (Decimal(item.variant.price) * (Decimal(item.variant.product.discount) / 100) * Decimal(item.quantity))
+                    
+                    # Check for type_category offers
+                    if item.variant.product.type_category:
+                        # Get the active offer for the TypeCategory
+                        offer = Offer.objects.filter(type_category=item.variant.product.type_category, is_active=True).first()
+                        if offer:
+                            product_price = Decimal(item.variant.price)
+                            type_category_offer_discount = Decimal(0)
+
+                            if offer.offer_type == 'percentage':
+                                type_category_offer_discount = (product_price * offer.discount_value / 100) * item.quantity
+                            elif offer.offer_type == 'flat':
+                                type_category_offer_discount = offer.discount_value * item.quantity
+
+                            # Add to the discount total
+                            discount_total += type_category_offer_discount
+
                 shipping_cost = Decimal(5.00)  # Use Decimal for shipping cost
 
                 # Calculate the total
@@ -590,27 +763,29 @@ def update_cart_quantity(request, item_id):
     return JsonResponse({'success': False, 'error': "Invalid request method."})
 
 
-
  
 
 
 
 @login_required
-def add_to_wishlist(request, products_id=None, variant_id=None):
-    if products_id:
-        product = get_object_or_404(Product, id=products_id)
-        wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
-    elif variant_id:
-        variant = get_object_or_404(Variant, id=variant_id)
-        wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, variant=variant)
+def add_to_wishlist(request, products_id, variant_id):
+    # Retrieve the product using the provided product_id
+    product = get_object_or_404(Product, id=products_id)
+    print(product)
+    
+    # Ensure the variant exists and belongs to the selected product
+    variant = get_object_or_404(Variant, id=variant_id, product=product)
+    print(variant)
 
-    if created:
-        messages.success(request, "Item added to your wishlist!")
-    else:
-        messages.info(request, "Item is already in your wishlist.")
-    return redirect('wishlist')
+    # Check if the product-variant combination already exists in the user's wishlist
+    if Wishlist.objects.filter(user=request.user, product=product, variant=variant).exists():
+        # Optionally, show a message or just redirect
+        return redirect('wishlist')  # Redirect to wishlist page
 
-
+    # Add the selected product-variant combination to the wishlist
+    Wishlist.objects.create(user=request.user, product=product, variant=variant)
+    
+    return redirect('wishlist')  # Redirect to wishlist page
 
 
 @login_required
@@ -717,23 +892,39 @@ def checkout(request):
     subtotal, discount_total, coupon_discount, applied_coupon, shipping_cost, total = calculate_totals(cart_items, coupon_id, request.user)
 
     # Check if wallet amount is available
-    wallet = Wallet.objects.get(user=request.user)
-    wallet_amount = wallet.balance
-    if wallet_amount > 0:
-        if wallet_amount >= total:
-            total = 0
-        else:
-            total -= wallet_amount
+    # wallet = Wallet.objects.get(user=request.user)
+    # wallet_amount = wallet.balance
+    # if wallet_amount > 0:
+    #     if wallet_amount >= total:
+    #         total = 0
+    #     else:
+    #         total -= wallet_amount
 
-    # Convert total to integer for Razorpay order creation
-    total_paise = int(total * 100)
+    # # Convert total to integer for Razorpay order creation
+    # total_paise = int(total * 100)
 
     addresses = Address.objects.filter(user=request.user)
     
     if request.method == 'POST':
         selected_address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
-        
+        use_wallet = 'use_wallet' in request.POST 
+        # Store wallet usage preference in session 
+        request.session['use_wallet'] = use_wallet
+
+        wallet = Wallet.objects.get(user=request.user)
+        wallet_amount = wallet.balance if use_wallet else 0
+
+        if wallet_amount > 0:
+
+            if wallet_amount>=total:
+                total=0
+            else:
+                total -= wallet_amount
+                 
+        total_paise = int(total * 100)
+        request.session['total_amount'] = float(total) # Store the updated total in the session
+                          
         if selected_address_id:
             address = get_object_or_404(Address, id=selected_address_id, user=request.user)
             
@@ -800,8 +991,10 @@ def place_order_from_cart(request, address_id):
     razorpay_order_id = request.session.get('razorpay_order_id', '')
 
     # Deduct wallet amount
+    use_wallet = request.session.get('use_wallet', False)
     wallet = Wallet.objects.get(user=request.user)
-    wallet_amount = wallet.balance
+    wallet_amount = wallet.balance if use_wallet else 0
+    print(wallet_amount)
     wallet_amount_used = 0
     if wallet_amount > 0:
         if wallet_amount >= total:
@@ -824,7 +1017,7 @@ def place_order_from_cart(request, address_id):
     elif payment_method=="COD":
         payment_status="Pending"                        
      
-    print(payment_status)
+     
 
     order = Order.objects.create(
         user=request.user,
@@ -838,12 +1031,37 @@ def place_order_from_cart(request, address_id):
         payment_status=payment_status  # Update payment status
     )
 
+
+
+
     for item in cart_items:
+
+        discounted_price = Decimal(item.variant.price)
+
+        # Apply product discount (if any)
+        if item.variant.product.discount > 0:
+            discounted_price -= (discounted_price * Decimal(item.variant.product.discount) / 100)
+
+        # Check for type_category offers
+        if item.variant.product.type_category:
+            offer = Offer.objects.filter(
+                type_category=item.variant.product.type_category, is_active=True
+            ).first()
+
+            if offer:
+                # Calculate the offer discount based on offer type
+                if offer.offer_type == 'percentage':
+                    discounted_price -= (discounted_price * Decimal(offer.discount_value) / 100)
+                elif offer.offer_type == 'flat':
+                    discounted_price -= Decimal(offer.discount_value)
+
+        # Create the OrderItem with the final discounted price
+        print(discounted_price)
         OrderItem.objects.create(
             order=order,
             variant=item.variant,
             quantity=item.quantity,
-            price=item.variant.price,
+            price=discounted_price,  
         )
         item.variant.stock -= item.quantity
         item.variant.save()
@@ -875,6 +1093,8 @@ def place_order_from_cart(request, address_id):
     request.session.pop('payment_method', None)
     request.session.pop('razorpay_order_id', None)
     request.session.pop('selected_address_id', None)
+    request.session.pop('total_amount', None) 
+    request.session.pop('use_wallet', None)
 
     return redirect('order_confirmation', order_id=order.id)
 
@@ -910,7 +1130,7 @@ def razorpay_payment_success(request):
             # Signature verification failed
             messages.error(request, "Payment verification failed.")
             return redirect('checkout')
-    return redirect('checkout')
+    return redirect('checkout') 
 
 
 @csrf_exempt
@@ -979,7 +1199,7 @@ def return_order(request, order_id):
             variant.stock += item.quantity
             variant.save()
         
-        messages.success(request, "Your order has been returned.")
+        messages.info(request, "Your order has been returned.")
     else:
         messages.error(request, "Order cannot be returned.")
     
@@ -1054,7 +1274,7 @@ def remove_coupon(request):
         if user_coupon:
             user_coupon.is_used = False
             user_coupon.save()
-            messages.success(request, 'Coupon removed successfully')
+            messages.info(request, 'Coupon removed successfully')
     else:
 
         messages.warning(request,"No Coupon applied")
@@ -1094,29 +1314,7 @@ def update_order_status(request, order_id, status):
     return JsonResponse({'success': 'Order status updated'})
 
 
-
-
-#test cases here
  
-      
-     
-# from django.shortcuts import get_object_or_404, redirect
-# from django.contrib import messages
-# from .models import OrderItem
-
-# def cancel_item(request, item_id):
-#     item = get_object_or_404(OrderItem, id=item_id)
-#     item.status = 'Cancelled'
-#     item.save()
-#     messages.success(request, f'Item {item.variant.product.name} has been cancelled.')
-#     return redirect('order_confirmation', order_id=item.order.id)
-
-# def return_item(request, item_id):
-#     item = get_object_or_404(OrderItem, id=item_id)
-#     item.status = 'Returned'
-#     item.save()
-#     messages.success(request, f'Item {item.variant.product.name} has been returned.')
-#     return redirect('order_confirmation', order_id=item.order.id)
  
  
  #wallet Transaction
@@ -1173,7 +1371,7 @@ def submit_return(request, item_id):
 
     # Ensure no duplicate return request exists
     if ReturnRequest.objects.filter(order_item=item).exists():
-        messages.error(request, 'A return request for this item already exists.')
+        messages.warning(request, 'A return request for this item already exists.')
         return redirect('order_confirmation', order_id=item.order.id)
 
     if request.method == 'POST':
@@ -1241,3 +1439,8 @@ def cancel_item(request, item_id):
 
     # Redirect to the order confirmation page
     return redirect('order_confirmation', order_id=item.order.id)
+
+
+#page not found
+def custom_404(request,exception):
+    return render(request, '404.html',status=404)

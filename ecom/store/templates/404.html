@@ -1,0 +1,62 @@
+
+{% load  static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background:#dc3545;
+        }
+        .container {
+            padding: 50px;
+        }
+        h1 {
+            font-size: 80px;
+            color: #dc3545;
+        }
+        p {
+            font-size: 20px;
+            margin: 20px 0;
+            color:white;
+        }
+        a {
+            text-decoration: none;
+            color:rgb(197, 210, 224);
+            font-size: 18px;
+            border: 1px solid #007bff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .image {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <p>Oops! The page you're looking for doesn't exist.</p>
+        <div class="image">
+            <img src="{% static "images/404.jpeg" %}" alt="Page Not Found" />
+            
+        </div>
+        <a href="{% url 'home' %}">Go Back to Home</a>
+    </div>
+</body>
+</html>

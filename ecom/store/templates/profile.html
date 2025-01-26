@@ -51,12 +51,16 @@
 
                     <div class="col-md-6">
                         <label for="phone" class="form-label">Phone</label>
-                        <input type="text" id="phone" name="phone_number" value="{{ user.phone_number }}" class="form-control">
+                        <input type="text" id="phone" name="phone_number" value="{{ user.phone_number }}" class="form-control" pattern="\d{10}" maxlength="10" required>
+                        <div class="invalid-feedback">
+                            Please enter a valid 10-digit phone number.
+                        </div>
                     </div>
+                    
                 </div>
                 <div class="mb-4">
                     <h4 class="text-center">Wallet Balance</h4>
-                    <a href="{% url 'wallet_transactions' %}">Wallet Transactions</a>
+                    {% comment %} <a href="{% url 'wallet_transactions' %}">Wallet Transactions</a> {% endcomment %}
 
                     {% if user.wallet %}
                         <p class="text-center fw-bold" style="font-size: 24px;">₹{{ user.wallet.balance|floatformat:2 }}</p>
@@ -67,12 +71,24 @@
                     {% else %}
                         <p class="text-center text-muted">Wallet not available.</p>
                     {% endif %}
+                    <a href="{% url 'wallet_transactions' %}">Wallet Transactions</a>
+
                 </div>
                 <div class="col-md-6 d-flex align-items-end mb-3">
                     <p class="mb-0">
                         <a href="{% url 'password_reset' %}" class="text-decoration-none fw-bold" style="font-size: 20px;">Forgot Account Password?</a>
                     </p>
                 </div>
+                 
+            <div class="col-md-4">
+                <label for="password">Enter Password to Confirm Changes</label>
+                <div class="input-group">
+                    <!-- Password input field -->
+                    <input type="password" name="password" id="password" required class="form-control" aria-label="Password">
+                                   
+                </div>
+            </div>
+
 
                 <button type="submit" class="btn btn-primary" style="width: 250px; height: 50px;">Update Profile</button>
             </form>

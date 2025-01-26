@@ -1,0 +1,137 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<!-- Header -->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager Page</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Offers List</p>
+        </div>
+    </div>
+</header>
+
+<style>
+  /* Add your styles here */
+  form {
+      width: 500px;
+      height: auto;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+  }
+  table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 16px;
+      text-align: left;
+  }
+  table thead tr {
+      background-color: #f2f2f2;
+      border-bottom: 2px solid #ddd;
+  }
+  table th, table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+  }
+  table tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+  }
+  table tbody tr:hover {
+      background-color: #f1f1f1;
+  }
+  button {
+      background-color: #4CAF50; /* Green */
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+  }
+  button:hover {
+      background-color: #45a049; /* Darker green */
+  }
+  .edit-btn {
+      background-color: #008CBA; /* Blue */
+  }
+  .edit-btn:hover {
+      background-color: #005f6b; /* Darker blue */
+  }
+</style>
+
+{% if user.is_superuser %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Offer Type</th>
+            <th>Discount Value</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for offer in offers %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ offer.offer_type|title }}</td>
+            <td>
+                {% if offer.offer_type == 'percentage' %}
+                    {{ offer.discount_value }}%
+                {% else %}
+                    ₹{{ offer.discount_value }}
+                {% endif %}
+            </td>
+            <td>
+                {% if offer.type_category %}
+                    {{ offer.type_category.name }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>
+                {% if offer.is_active %}
+                    <span style='color:green;'>Active</span>
+                {% else %}
+                    <span style='color:red;'>Inactive</span>
+                {% endif %}
+            </td>
+            <td>
+                <!-- Activate/Deactivate Button -->
+                <form method="post" action="{% url 'toggle_offer_status' offer.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" 
+                    class="{% if offer.is_active %}btn btn-danger{% else %}btn btn-success{% endif %}">
+
+                        {% if offer.is_active %}
+                        Deactivate
+                        {% else %}
+                        Activate
+                        {% endif %}
+                    </button>
+                </form>
+
+                <!-- Edit Button -->
+                <a href="{% url 'edit_offer' offer.id %}">
+                    <button type="button" class="edit-btn">Edit</button>
+                </a>
+
+                <!-- Delete Button -->
+                <form method="post" action="{% url 'delete_offer' offer.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Are you sure you want to delete this offer?');" style='background-color:red;'>Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>    
+<a href="{% url 'create_offer' %}" class="btn btn-primary">Add New Offer</a>
+
+{% else %}
+<p>You are not authorized to view this page.</p>
+{% endif %}
+
+{% endblock content %}

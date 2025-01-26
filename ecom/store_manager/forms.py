@@ -1,9 +1,12 @@
  # store_manager/forms.py
 from django import forms
-from store.models import Product, ProductImage,Variant,Storage,Colour,Category,Brand,Coupon,TypeCategory
+from store.models import Product, ProductImage,Variant,Storage,Colour,Category,Brand,Coupon,TypeCategory,Offer
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 from datetime import datetime
+from django.utils import timezone
+
+ 
 
 
 class TypeCategoryForm(forms.ModelForm):
@@ -15,6 +18,66 @@ class TypeCategoryForm(forms.ModelForm):
         }
 
 
+class OfferForm(forms.ModelForm):
+    class Meta:
+        model = Offer
+        fields = ['offer_type', 'discount_value', 'type_category', 'start_date', 'end_date', 'is_active']
+        widgets = {
+            'offer_type': forms.Select(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter discount value'}),
+            'type_category': forms.Select(attrs={'class': 'form-control'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'min': timezone.now().date().isoformat()}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'min': timezone.now().date().isoformat()}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'offer_type': 'Offer Type',
+            'discount_value': 'Discount Value',
+            'type_category': 'Type Category',
+            'is_active': 'Active Offer',
+        }
+
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get('discount_value')
+        if discount_value is None:
+            raise forms.ValidationError("Discount value is required.")
+        if discount_value <= 0:
+            raise forms.ValidationError("Discount value must be greater than zero.")
+        if self.cleaned_data.get('offer_type') == 'percentage' and discount_value > 100:
+            raise forms.ValidationError("Percentage discounts cannot exceed 100%.")
+        return discount_value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        offer_type = cleaned_data.get('offer_type')
+        type_category = cleaned_data.get('type_category')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        # Ensure type_category is selected
+        if not type_category:
+            raise forms.ValidationError("You must select a Type Category.")
+
+        # Convert start_date and end_date to datetime.date if they are datetime objects
+        if isinstance(start_date, datetime):
+            start_date = start_date.date()
+
+        if isinstance(end_date, datetime):
+            end_date = end_date.date()
+
+        # Validate that the start date is not in the past
+        if start_date and start_date < timezone.now().date():
+            raise forms.ValidationError("Start date cannot be in the past.")
+
+        # Validate that the end date is after the start date
+        if start_date and end_date and end_date <= start_date:
+            raise forms.ValidationError("End date must be later than the start date.")
+
+        # Ensure the offer is active only if dates are set correctly
+        if cleaned_data.get('is_active') and (not start_date or not end_date):
+            raise forms.ValidationError("Both start date and end date are required for an active offer.")
+        
+        return cleaned_data
 
 
 class ProductForm(forms.ModelForm):
@@ -31,7 +94,7 @@ class ProductForm(forms.ModelForm):
             'type_category': forms.Select(attrs={'class': 'form-control'}),   
             'thumbnail': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'is_featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),  # Checkbox for featured
-            'discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter discount percentage'}),
+            'discount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter discount percentage'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -54,24 +117,20 @@ class ProductForm(forms.ModelForm):
         if price is not None and price<=0:
             raise forms.ValidationError("Price must be greater than 0")
         return price
+    
+    def clean_discount(self):
+        discount = self.cleaned_data.get('discount')
+        if discount is not None and discount<0:
+            raise forms.ValidationError("Discount percentage must be greater than 0")
+        
+        if discount>100:
+            raise forms.ValidationError("Discount percentage cannot exceed 100%.")
+        
+        return discount
 
-
-    # def clean_thumbnail(self):
-
-    #     thumbnail=self.cleaned_data.get('thumbnail')
-    #     if thumbnail:
-
-    #         try:
-    #             image=get_image_dimensions(self)
-    #             if not image:
-    #                 raise ValidationError("This is not a valid image.")
-    #         except Exception as e:
-    #             raise ValidationError("Invalid image format.")
-    #     return thumbnail        
-            
-            
 
  
+
  
  
 

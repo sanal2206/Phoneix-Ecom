@@ -75,10 +75,11 @@
 
 
                 </div>
+                
             </div>
         </header>
 
-        <div class="container py-5">
+        <div class="container py-5 d-flex justify-content-evenly">
             
             {% if available_coupons %}
  
@@ -86,34 +87,56 @@
                     {% for coupon in  available_coupons%}
                         <div class="badge bg-primary text-white m-2 p-3" style="font-size: 1.2em; border-radius: 10px;">
                             <h5 class="mb-1">{{ coupon.code }}</h5>
-                            <p class="mb-0">
+                            <p class="mb-0 text-white">
                                 <strong>{{ coupon.discount_percent }}% OFF</strong><br>
                                 Valid Until: {{coupon.end_date|date:"d-m-Y" }}
                             </p>
                         </div>
                     {% endfor %}
                 </div>
-         
+                
+
+                
             {% endif %}
 
-
-            {% comment %} {% if coupons %}
+            {% if active_offers %}
             <div class="d-flex flex-wrap">
-                {% for coupon in  coupons%}
+                {% for offer in active_offers %}
                     <div class="badge bg-primary text-white m-2 p-3" style="font-size: 1.2em; border-radius: 10px;">
-                        <h5 class="mb-1">{{ coupon.code }}</h5>
-                        <p class="mb-0">
-                            <strong>{{ coupon.discount_percent }}% OFF</strong><br>
-                            Valid Until: {{coupon.end_date|date:"Y-m-d" }}
+                        <h5 class="mb-1">{{ offer.offer_type|capfirst }} Offer</h5>
+        
+                        <!-- Check for TypeCategory presence -->
+                        <p class="text-white mb-0">
+                            <strong>Category: </strong>
+                            {% if offer.type_category %}
+                                {{ offer.type_category.name }}
+                             
+                            {% endif %}
+                        </p>
+        
+                        <p class="text-white mb-0">
+                            <strong>Discount: </strong>{{ offer.discount_value }} 
+                            {% if offer.offer_type == 'percentage' %}
+                                %
+                            {% else %}
+                                ₹
+                            {% endif %}
+                        </p>
+        
+                       
+                        <p class="text-white mb-0">
+                            <strong>End Date: </strong>{{ offer.end_date|date:"d-m-Y" }}
                         </p>
                     </div>
                 {% endfor %}
-            </div> {% endcomment %}
-     
-        {% comment %} {% endif %} {% endcomment %}
+            </div>
+        
+        {% endif %}
+        
 
+           
 
-        </div>
+    </div>
         
 
         <!-- Section-->
@@ -124,43 +147,54 @@
                     {%  for product in products %}
 
                     <div class="col mb-5">
-                        <div class="card h-100">
+                        <div class="card h-100" >
                             <!-- Product image-->
                             <img class="card-img-top" src="{{ product.thumbnail.url }}" alt="..." />
                             {% if product.is_featured %}
                             <!-- Featured label positioned at the corner -->
                             <span class="badge bg-success text-white position-absolute top-0 start-0 m-2">Featured</span>
                              {% endif %}
-                            
+
+
+                           
+                                                        
                             <!-- Product details-->
                             <div class="card-body p-4">
                                 <div class="text-center">
                                     <!-- Product name-->
                                     <h5 class="fw-bolder">{{ product.name }}</h5>
-                                    {% comment %} <div class="d-flex justify-content-center small text-warning mb-2">
-                                        <div class="bi-star-fill"></div>
-                                        <div class="bi-star-fill"></div>
-                                        <div class="bi-star-fill"></div>
-                                        <div class="bi-star-fill"></div>
-                                        <div class="bi-star-fill"></div>
-                                    </div> {% endcomment %}
+                                   
 
                                     <div class="d-flex justify-content-center small text-warning mb-2">
                                         {% for i in product.stars_range %}
                                             <i class="bi-star-fill {% if i <= product.avg_rating %}text-warning{% else %}text-muted{% endif %}"></i>
                                         {% endfor %}
                                     </div>
+                                    Brand: {{ product.brand }}<br>
                                     
-                                    
-                                    <!-- Product price-->
-                                    Price: ${{ product.price }}<br>
+                                   
                                     {% if product.discount > 0 %}
-                                    <!-- Discount label -->
-                                    <span class="badge bg-danger text-white">Discount-{{ product.discount }}%</span>
+                                        <!-- Product Discount Label -->
+                                        <span class="badge bg-danger text-white">Discount-{{ product.discount }}%</span>
+                                        {% else %}
+                                      <br>
+                                  
                                     {% endif %}
-                                    <br>
-                                    Brand: {{ product.brand }}
                                     
+
+                                     
+                                <br>
+                 
+                                    {% if product.discounted_price < product.price %}
+                                    <!-- Show discounted price with original price struck through -->
+                                    <span class="text-muted text-decoration-line-through">    Product Price:${{ product.price|floatformat:2 }}</span><br>
+                                    <strong class="text-success">    Final Price:${{ product.discounted_price|floatformat:2 }}</strong>
+                                        {% else %}
+                                            <!-- Show only the original price -->
+                                            <strong>    Final Price:${{ product.price|floatformat:2 }}</strong>
+                                        {% endif %}
+                 
+                                                        
                                 </div>
                             </div>
                             <!-- Product actions-->

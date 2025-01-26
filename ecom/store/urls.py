@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from . import views
+from django.conf.urls import handler404
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -52,8 +53,10 @@ urlpatterns = [
 
     # Wishlist
     path('wishlist/', views.wishlist, name='wishlist'),
-    # path('wishlist/add/<int:products_id>/', views.add_to_wishlist, name='add_to_wishlist'),
-    path('add-to-wishlist/<int:products_id>/<int:varinat_id>', views.add_to_wishlist,name='add_to_wishlist'),
+     path('add-to-wishlist/<int:products_id>/<int:variant_id>', views.add_to_wishlist,name='add_to_wishlist'),
+ 
+    # path('add_to_wishlist/<int:product_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+
     path('wishlist/remove/<int:wishlist_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('view_profile/', views.view_profile, name='view_profile'),
 
@@ -70,6 +73,7 @@ urlpatterns = [
  
     path('submit-return/<int:item_id>/', views.submit_return, name='submit_return'),
     path('cancel-item/<int:item_id>/', views.cancel_item, name='cancel_item'),
+ 
 
 
 
@@ -77,3 +81,4 @@ urlpatterns = [
 
 # Static files (images, CSS, JavaScript, etc.) 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+handler404 = "store.views.custom_404"

@@ -31,7 +31,7 @@
                                 <th scope="col">Product</th>
                                 <th scope="col">Variant</th>
                                 <th scope="col">Quantity</th>
-                                <th scope="col">Actions</th>
+                                <th scope="col"></th>
                                 <th scope="col">Price</th>
                                 <th scope="col">Discount</th>
                                 <th scope="col">Total</th>
@@ -131,23 +131,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Order Summary</h5>
                             <hr>
-                            {% comment %} <p class="d-flex justify-content-between">
-                                <span>Subtotal:</span>
-                                <span>${{ subtotal }}</span>
-                            </p>
-                            <p class="d-flex justify-content-between">
-                                <span>Discount:</span>
-                                <span>${{ discount_total|floatformat:2 }}</span>
-                            </p>
-                            <p class="d-flex justify-content-between">
-                                <span>Shipping:</span>
-                                <span>$5.00</span>
-                            </p>
-                            <hr>
-                            <p class="d-flex justify-content-between">
-                                <strong>Total:</strong>
-                                <strong>${{ total }}</strong>
-                            </p> {% endcomment %}
+                       
 
                             <p class="d-flex justify-content-between">
                                 <span>Subtotal:</span>
@@ -162,8 +146,8 @@
                                 <span>$5.00</span>
                             </p>
                             <p class="d-flex justify-content-between">
-                                <strong>Total:</strong>
-                                <strong id="cart-total">${{ total }}</strong>
+                                <strong>Total:</strong> 
+                                <strong id="cart-total">${{ total|floatformat:2 }}</strong>
                             </p>
                             
                             <a href="{% url 'checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>

@@ -40,13 +40,19 @@
                               
 
                                 <!-- Product price -->
-                                Price: ${{ item.product.price }}<br>
+                                Price: 
+                                {% if item.variant.price %}
+                                    ${{ item.variant.price }}
+                               
+                                {% endif %}
+                                <br>
                                 {% if item.product.discount > 0 %}
                                 <!-- Discount label -->
                                 <span class="badge bg-danger text-white">Discount-{{ item.product.discount }}%</span>
                                 {% endif %}
                                 <br>
-                                Brand: {{ item.product.brand }}
+                                Brand: {{ item.product.brand |capfirst}}
+                                
                             </div>
                         </div>
 

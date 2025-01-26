@@ -90,7 +90,7 @@
                 <th>Product</th>
                 <th>Variant</th>
                 <th>Quantity</th>
-                <th>Product Discount</th>
+               
                 <th>Total Cost</th>
             </tr>
         </thead>
@@ -100,13 +100,7 @@
                 <td>{{ item.variant.product.name }}</td>
                 <td>{{ item.variant.colour.colour }} - {{ item.variant.storage.capacity }}GB</td>
                 <td>{{ item.quantity }}</td>
-                <td>
-                    {% if item.discount_percent > 0 %}
-                        {{ item.discount_percent|floatformat:2 }}% Off
-                    {% else %}
-                        None
-                    {% endif %}
-                </td>
+                
                 <td>${{ item.total_cost|floatformat:2 }}</td>
             </tr>
             {% endfor %}

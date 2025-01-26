@@ -26,6 +26,7 @@
                         <p>Requested by: {{ request.user.email }}</p>
                         <p>Requested on: {{ request.created_at|date:"d M Y, H:i" }}</p>
                         <p>Status: {{ request.status }}</p>
+                        <p>Status: {{ request.order_item.order_id }}</p>
                     </div>
                     <div>
                         <form method="post" action="{% url 'update_return_request' request.id %}">

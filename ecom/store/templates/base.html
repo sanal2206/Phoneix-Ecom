@@ -11,6 +11,10 @@
         <link rel="icon" type="image/x-icon" href="{% static 'assets/favicon.ico' %}" />
         <!-- Bootstrap icons-->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
         <!-- Core theme CSS (includes Bootstrap)-->
         <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
         <link href="{% static 'css/productstyle.css' %}" rel="stylesheet" />
@@ -21,13 +25,20 @@
         
         <!-- Messages -->
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
+        {% for message in messages %}
+            <div class="alert 
+                {% if message.tags == 'error' %}alert-danger
+                {% elif message.tags == 'success' %}alert-success
+                {% elif message.tags == 'info' %}alert-info
+                {% elif message.tags == 'warning' %}alert-warning
+                {% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
         {% endif %}
+    
+    
         
         <!-- Main Content -->
         <main style="flex: 1;">
@@ -42,6 +53,31 @@
             </div>
         </footer>
         
+
+
+        <!-- JavaScript for Password Visibility Toggle -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const passwordFields = document.querySelectorAll('.password-input');
+                passwordFields.forEach(function (passwordInput) {
+                    const toggleButton = passwordInput.nextElementSibling; // Button next to the input
+                    const eyeIcon = toggleButton.querySelector('i');
+                    
+                    toggleButton.addEventListener('click', function () {
+                        // Toggle the type attribute
+                        if (passwordInput.type === 'password') {
+                            passwordInput.type = 'text';
+                            eyeIcon.classList.remove('bi-eye-slash');
+                            eyeIcon.classList.add('bi-eye');
+                        } else {
+                            passwordInput.type = 'password';
+                            eyeIcon.classList.remove('bi-eye');
+                            eyeIcon.classList.add('bi-eye-slash');
+                        }
+                    });
+                });
+            });
+        </script>
         <!-- Bootstrap core JS-->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Core theme JS-->

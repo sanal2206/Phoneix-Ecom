@@ -127,7 +127,7 @@ from .models import Order, Wallet, WalletTransaction
 
 @receiver(post_save, sender=Order)
 def refund_wallet(sender, instance, **kwargs):
-    if instance.status in ['Cancelled', 'Returned'] :
+    if instance.status in ['Cancelled', 'Returned'] and instance.payment_status == 'Paid':
         refund_amount = instance.wallet_amount_used + instance.total_price
         instance.user.wallet.add_funds(refund_amount)
         WalletTransaction.objects.create(

@@ -4,11 +4,12 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden,HttpResponse
 from django.contrib import messages
 from django.shortcuts import render
-from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order,OrderItem,Wallet,WalletTransaction,Brand,Coupon,TypeCategory
+from store.models import Product, CustomUser, Category,ProductImage,Colour,Variant,Storage,Order,OrderItem,Wallet,WalletTransaction,Brand,Coupon,TypeCategory,Offer
 from django.contrib.auth.views import LoginView
 from store.forms import ReviewForm
-from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm,BrandForm,CouponForm,TypeCategoryForm
- 
+from .forms import ProductForm, ProductImageFormSet,ColourForm,VariantForm,StorageForm,CategoryForm,BrandForm,CouponForm,TypeCategoryForm,OfferForm
+from django.views.decorators.csrf import csrf_exempt
+
 
 class AdminLoginView(LoginView):
     template_name = 'admin_login.html'
@@ -536,6 +537,19 @@ def store_manager_orders(request):
                             item.variant.stock += item.quantity
                             item.variant.save()
 
+
+
+                      # Handle Delivered status for COD payment
+                    if new_status == 'Delivered' and order.payment_method == 'COD' and order.payment_status != 'Paid':
+                        order.payment_status = 'Paid'
+                        order.save()
+                        # WalletTransaction.objects.create(
+                        #     user=order.user,
+                        #     amount=order.total_price,
+                        #     transaction_type='Payment',
+                        #     description=f"Payment confirmed for delivered order {order.id} (COD)"
+                        # )
+
                     messages.success(request, f"Order #{order.id} status updated to {new_status}.")
             else:
                 messages.error(request, "Invalid status provided.")
@@ -623,45 +637,57 @@ from datetime import date, timedelta
 from django.template.loader import render_to_string
 from store.models import Order
 from .utils import export_to_excel, export_to_pdf
-
-
-
  
-
+ 
 def generate_sales_report(request):
-    report_type = request.GET.get('report_type', 'total')
+    # Default to 'today' if no report_type is provided
+    report_type = request.GET.get('report_type', 'today')
     start_date = end_date = None
 
     # Define date ranges based on the report type
-    if report_type == 'daily':
-        start_date = date.today()
-        end_date = date.today()
+    if report_type == 'today':
+        start_date = end_date = date.today()
     elif report_type == 'weekly':
         start_date = date.today() - timedelta(days=7)
         end_date = date.today()
+    elif report_type == 'monthly':
+        # Ensure that start_date is the first day of the current month
+        today = date.today()
+        start_date = today.replace(day=1)  # Start of the current month
+        end_date = today
     elif report_type == 'custom':
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
+        # Validate custom date range
+        try:
+            start_date = date.fromisoformat(start_date) if start_date else None
+            end_date = date.fromisoformat(end_date) if end_date else None
+        except ValueError:
+            start_date = end_date = None
 
-    if start_date and end_date:
-        # Filter orders within the date range
-        orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
-    else:
-        # Default to showing all orders
-        orders = Order.objects.all()
-        
+    # Default to today's sales if date range is invalid
+    if not start_date or not end_date:
+        start_date = end_date = date.today()
+
+    # Filter orders within the date range
+    orders = Order.objects.filter(created_at__date__range=[start_date, end_date]).order_by('-created_at')
+
     # Calculate metrics
     total_sales_count = orders.count()
     overall_order_amount = orders.aggregate(Sum('total_price'))['total_price__sum'] or 0
-    total_coupon_deductions = orders.aggregate(Sum('applied_coupon'))['applied_coupon__sum'] or 0
+    overall_wallet_amount = orders.aggregate(Sum('wallet_amount_used'))['wallet_amount_used__sum'] or 0
+    coupons_applied_count = orders.filter(applied_coupon__isnull=False).count()
 
+    # Pass data to the context
     context = {
+        'orders': orders,
         'total_sales_count': total_sales_count,
         'overall_order_amount': overall_order_amount,
-        'total_coupon_deductions': total_coupon_deductions,
+        'coupons_applied_count': coupons_applied_count,
+        'overall_wallet_amount':overall_wallet_amount,
         'start_date': start_date,
         'end_date': end_date,
-        'report_type': report_type
+        'report_type': report_type,
     }
 
     # Handle export requests
@@ -673,7 +699,11 @@ def generate_sales_report(request):
         elif export_type == 'excel':
             return export_to_excel(context)
 
+    # Render the sales report page
     return render(request, 'sales_report.html', context)
+
+ 
+
 
 
 #test
@@ -713,6 +743,7 @@ def update_return_request(request, return_request_id):
 
             variant.stock+=order_item.qunatity
             variant.save()
+            
 
             
              
@@ -804,3 +835,69 @@ def delete_typecategory(request,id):
         messages.success(request, "Category deleted successfully!")
         return redirect('typecategory_list')
     return HttpResponse("Invalid request", status=400)
+
+
+#offer
+
+
+def create_offer(request):
+    if request.method=="POST":
+        form=OfferForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Offer created successfully.")
+            return redirect('offer_list')
+    else:
+        form=OfferForm()
+    return render(request,'create_offer.html',{'form':form})        
+
+# List Offers
+def offer_list(request):
+    
+    offers = Offer.objects.all()
+    return render(request, 'offer_list.html', {'offers': offers})
+
+
+
+
+# Edit Offer
+def edit_offer(request, offer_id):
+    
+    offer = get_object_or_404(Offer, id=offer_id)
+    if request.method == 'POST':
+        form = OfferForm(request.POST, instance=offer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Offer updated successfully!")
+            return redirect('offer_list')
+    else:
+        form = OfferForm(instance=offer)
+    
+    return render(request, 'create_offer.html', {'form': form,})
+
+# Delete Offer
+@csrf_exempt
+def delete_offer(request, offer_id):
+   
+    offer = get_object_or_404(Offer, id=offer_id)
+    if request.method == 'POST':
+        offer.delete()
+        messages.success(request, "Offer deleted successfully!")
+        return redirect('offer_list')
+    
+    return render(request, 'offer_list.html', {'offer': offer})
+
+# Toggle Offer Status (Activate/Deactivate)
+@csrf_exempt
+def toggle_offer_status(request, offer_id):
+    
+    
+    offer = get_object_or_404(Offer, id=offer_id)
+    if request.method == 'POST':
+        offer.is_active = not offer.is_active
+        offer.save()
+        status = "activated" if offer.is_active else "deactivated"
+        messages.success(request, f"Offer has been {status} successfully!")
+        return redirect('offer_list')
+    
+    return redirect('offer_list')

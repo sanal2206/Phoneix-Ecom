@@ -35,7 +35,13 @@ urlpatterns = [
     path('typecategory/<int:id>/edit/', views.edit_typecategory, name='edit_typecategory'),
     path('typecategory/<int:id>/delete/', views.delete_typecategory, name='delete_typecategory'),
 
-
+    #offfer
+   
+    path('offer/', views.offer_list, name='offer_list'),
+    path('offer/create',views.create_offer,name='create_offer'),
+    path('offer/<int:offer_id>/edit/', views.edit_offer, name='edit_offer'),
+    path('offer/<int:offer_id>/delete/', views.delete_offer, name='delete_offer'),
+    path('offer/<int:offer_id>/toggle-status/', views.toggle_offer_status, name='toggle_offer_status'),
          
     #edit
     path('edit/product/<int:product_id>/', views.edit_product, name='admin_edit_product'),

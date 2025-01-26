@@ -8,7 +8,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     
     <div class="container px-4 px-lg-5">
-        <a class="navbar-brand" href="{% url 'home' %}">Phoneix</a>
+        <a class="navbar-brand" href="{% url 'admin_dashboard' %}">Phoneix</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
@@ -34,7 +34,7 @@
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_color' %}">Create Color</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_storage' %}">Create Storage</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_brand' %}">Create Brand</a></li>
-                    </ul> 
+                     </ul> 
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">List</a>
@@ -73,6 +73,19 @@
                         <li><hr class="dropdown-divider" /></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'add_coupon' %}">Add coupon</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'coupon_list' %}">View Coupons</a></li>
+                        
+                    </ul> 
+                </li>
+
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Offers</a>
+                
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href=" "></a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'create_offer' %}">Create Offer</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'offer_list' %}">View Offers</a></li>
                         
                     </ul> 
                 </li>

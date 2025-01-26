@@ -1,0 +1,123 @@
+
+
+{% extends "admin_base.html" %}
+
+
+{% comment %} {% load socialaccount%}
+{% load account %} {% endcomment %}
+
+{% block content %}
+
+
+  <!-- Header-->
+  <header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Store Manager  </h1>
+            <p class="lead fw-normal text-white-50 mb-0">Add new color</p>
+        </div>
+    </div>
+</header> 
+
+<style>
+  form{
+      width: 500px;
+      height: auto;
+      padding: 20px 20px 20px 20px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      margin: 50px auto;
+      border-radius: 10px;
+  }
+  form p{
+      text-align: center;
+  }
+
+  form h3{
+      text-align: center
+  }
+
+  form a{
+    font-size:20px
+}
+/* Google button */
+.button2 {
+    background-color: #5aa858 !important;
+    color: white !important;
+}
+
+/* Facebook button */
+.button1 {
+    background-color: #3b5998 !important;
+    color: white !important;
+}
+</style>
+ 
+
+ 
+
+
+{% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+ 
+
+
+
+   {% if user.is_superuser %}
+ 
+    <h1>Add a New Offer</h1>
+    <form method="post" style="width: 500px; margin: auto;">
+        {% csrf_token %}
+        <style>
+            form {
+                width: 500px;
+                margin: 50px auto;
+                padding: 20px;
+                box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+                border-radius: 10px;
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+            }
+            form input, 
+            form select, 
+            form textarea {
+                width: 100%; /* Make all form fields equal in width */
+                box-sizing: border-box; /* Include padding in width calculation */
+                padding: 10px;
+                margin-bottom: 15px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 14px;
+            }
+            form button {
+                width: 100%; /* Ensure the button matches the field width */
+                padding: 10px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            form button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Add Offer</button>
+    </form>
+    
+    <a href="{% url 'offer_list' %}">View All offer</a>
+ 
+    {% else %}
+    <p>You are not authorized to view this form.</p>
+    {% endif %}
+  
+{% endblock content %}
+
+ 
