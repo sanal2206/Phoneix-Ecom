@@ -1,57 +1,106 @@
 {% extends "base.html" %}
 
- {% block content %}
+{% block content %}
 
-
-  <!-- Header-->
-  <header class="bg-dark py-5">
+<!-- Header-->
+<header class="bg-dark py-5">
     <div class="container px-4 px-lg-5 my-5">
         <div class="text-center text-white">
-            <h1 class="display-4 fw-bolder">Login page </h1>
+            <h1 class="display-4 fw-bolder">Login page</h1>
             <p class="lead fw-normal text-white-50 mb-0">Login to Your Account</p>
         </div>
     </div>
 </header>
 
- 
 <style>
-    form{
+    form {
         width: 500px;
         height: auto;
-        padding: 20px 20px 20px 20px;
+        padding: 20px;
         box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
         margin: 50px auto;
         border-radius: 10px;
     }
-    form p{
+    form p {
         text-align: center;
     }
 
-    form h3{
-        text-align: center
+    form h3 {
+        text-align: center;
+    }
+
+    .otp-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+
+    #timer {
+        margin-right: 10px;
+    }
+
+    #resend-btn {
+        padding: 5px 10px;
+        background-color: #337ab7;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+
+    #resend-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 </style>
 
+<form action="" method='POST'>
+    {% csrf_token %}
+    <h3><strong>Verify Email</strong></h3>
+    <div class="mb-3">
+        <label class="form-label">OTP</label>
+        <input class="form-control" name="otp_code" placeholder="Enter OTP">
+    </div>
 
-    <form action="" method='POST'>
-        {% csrf_token %}
-        <h3><strong>Verify Email</strong></h3>
-        <div class="mb-3">
-            <label class="form-label">OTP</label>
-            <input class="form-control" name="otp_code" placeholder="Enter OTP">
-          </div>
+    <button class="btn btn-primary" style="width:100%">Activate Account</button>
 
-          <button class="btn btn-primary" style="width:100%">Activate Account</button>
-          {% comment %} <p>Need a new OTP? <a href="{% url 'resend-otp' %}">Resend OTP</a></p> {% endcomment %}
-          <p>Need a new OTP? <a href="#" id="resend-otp-link">Resend OTP</a></p>
+    <div class="otp-container">
+        <div id="timer">00:00</div>
+        <button id="resend-btn" disabled>Resend OTP</button>
+    </div>
+</form>
 
-    </form>
-    
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        var timerDuration = 300; // Timer duration in seconds
+        var timerInterval;
 
-    <script>
-        document.getElementById('resend-otp-link').addEventListener('click', function (e) {
-            e.preventDefault();  // Prevent default link behavior
-    
+        // Start the timer
+        function startTimer() {
+            var timer = timerDuration;
+            timerInterval = setInterval(function() {
+                var minutes = Math.floor(timer / 60);
+                var seconds = timer % 60;
+                var timeString = ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2);
+                $('#timer').text(timeString);
+                timer--;
+
+                if (timer < 0) {
+                    clearInterval(timerInterval);
+                    $('#resend-btn').prop('disabled', false).css('cursor', 'pointer');
+                }
+            }, 1000);
+        }
+
+        // Resend button click event
+        $('#resend-btn').click(function() {
+            $(this).prop('disabled', true).css('cursor', 'not-allowed');
+            startTimer();
+
+            // Send OTP request
             fetch("{% url 'resend-otp' %}", {
                 method: "POST",
                 headers: {
@@ -61,17 +110,17 @@
             })
             .then(response => response.json())
             .then(data => {
-                alert(data.message);  // Display success or error message
+                alert(data.message); // Display success or error message
             })
             .catch(error => {
                 console.error("Error:", error);
                 alert("An error occurred while resending the OTP.");
             });
         });
-    </script>
-    
 
+        // Initial start of the timer
+        startTimer();
+    });
+</script>
 
 {% endblock content %}
-
- 

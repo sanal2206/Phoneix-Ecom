@@ -10,6 +10,7 @@ def export_to_excel(data, file_name='report.xlsx'):
     return response
 
 def export_to_pdf(html_content, file_name='report.pdf'):
+    print(html_content)
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={file_name}'
     pisa_status = pisa.CreatePDF(html_content, dest=response)

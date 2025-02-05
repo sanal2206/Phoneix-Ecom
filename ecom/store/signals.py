@@ -108,7 +108,7 @@ def assign_coupon_to_users_on_creation(sender, instance, created, **kwargs):
     """
     Automatically assigns a newly created coupon to all users.
     """
-    if created:  # Trigger only when a new coupon is created
+    if created and not instance.code.startswith("WELCOME"):  # Trigger only when a new coupon is created
         users = User.objects.all()  # Fetch all users
         user_coupons = []
 
@@ -120,6 +120,9 @@ def assign_coupon_to_users_on_creation(sender, instance, created, **kwargs):
         # Bulk create to optimize database performance
         UserCoupon.objects.bulk_create(user_coupons)
         print(f"Coupon '{instance.code}' assigned to all users.")
+
+
+
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver

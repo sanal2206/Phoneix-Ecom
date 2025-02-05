@@ -184,18 +184,23 @@
 
                                      
                                 <br>
+                                
                  
-                                    {% if product.discounted_price < product.price %}
+                                    {% if product.get_discounted_min_variant_price < product.get_min_variant_price %}
                                     <!-- Show discounted price with original price struck through -->
-                                    <span class="text-muted text-decoration-line-through">    Product Price:${{ product.price|floatformat:2 }}</span><br>
-                                    <strong class="text-success">    Final Price:${{ product.discounted_price|floatformat:2 }}</strong>
-                                        {% else %}
-                                            <!-- Show only the original price -->
-                                            <strong>    Final Price:${{ product.price|floatformat:2 }}</strong>
-                                        {% endif %}
+                                    <span class="text-muted text-decoration-line-through">    Product Price:${{ product.get_min_variant_price|floatformat:2 }}</span><br>
+                                    <strong class="text-success">    Final Price:${{ product.get_discounted_min_variant_price|floatformat:2 }}</strong>
+                                    {% else %}
+                                    <!-- Show only the original price -->
+                                    <strong>    Final Price:${{ product.get_min_variant_price|floatformat:2 }}</strong>
+                                    {% endif %}
                  
                                                         
                                 </div>
+
+
+
+                                
                             </div>
                             <!-- Product actions-->
                             <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">

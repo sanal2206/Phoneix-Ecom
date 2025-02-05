@@ -32,6 +32,8 @@ DEBUG = False
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,8 +58,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.facebook',
 
-    #debug
-    'debug_toolbar',
+   
 ]
 
 MIDDLEWARE = [
@@ -69,9 +70,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Add this line
-
+ 
 ]
+
+
+
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
 ROOT_URLCONF = 'ecom.urls'
 
@@ -110,7 +116,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -129,26 +134,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
+ 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Asia/Kolkata'  # Adjust to your local time zone
-
-
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
- 
-# # STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
- 
 
 STATIC_URL = '/static/'
 
@@ -194,9 +185,6 @@ LOGIN_REDIRECT_URL = 'home'  # Redirect to home or your desired page after login
 
 
  
-
-
-
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 
@@ -263,7 +251,7 @@ INTERNAL_IPS = [
 ]
 
 
-#razoray_payement
+ 
 
  
 

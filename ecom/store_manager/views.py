@@ -637,12 +637,18 @@ from datetime import date, timedelta
 from django.template.loader import render_to_string
 from store.models import Order
 from .utils import export_to_excel, export_to_pdf
- 
+from django.db.models import F, Sum, ExpressionWrapper, DecimalField
+from decimal import Decimal
+
  
 def generate_sales_report(request):
     # Default to 'today' if no report_type is provided
     report_type = request.GET.get('report_type', 'today')
     start_date = end_date = None
+    total_discount = Decimal('0.00')
+    product_discount_total = Decimal('0.00')
+    offer_discount_total = Decimal('0.00')
+    coupon_discount_total = Decimal('0.00')
 
     # Define date ranges based on the report type
     if report_type == 'today':
@@ -672,12 +678,64 @@ def generate_sales_report(request):
     # Filter orders within the date range
     orders = Order.objects.filter(created_at__date__range=[start_date, end_date]).order_by('-created_at')
 
+    # Prefetch related data for better performance
+    orders = orders.prefetch_related(
+        'items__variant__product__type_category',
+        'items__variant__product',
+        'applied_coupon'
+    )
+
+    for order in orders:
+        # Calculate coupon discount first
+        if order.applied_coupon:
+            coupon_discount = order.total_price * (order.applied_coupon.discount_percent / Decimal('100'))
+            coupon_discount_total += coupon_discount
+            total_discount += coupon_discount
+
+        # Calculate product and offer discounts for each item
+        for item in order.items.all():
+            product = item.variant.product
+            variant_price = item.variant.price
+            quantity = item.quantity
+            
+            # Product discount calculation
+            product_discount = (variant_price * (product.discount / Decimal('100'))) * quantity
+            product_discount_total += product_discount
+            total_discount += product_discount
+
+            # Category offer calculation
+            if product.type_category:
+                # Find active offer at time of purchase
+                offer = Offer.objects.filter(
+                    type_category=product.type_category,
+                    start_date__lte=order.created_at,
+                    end_date__gte=order.created_at,
+                    is_active=True
+                ).first()
+
+                if offer:
+                    # Calculate price after product discount
+                    discounted_price = variant_price * (1 - (product.discount / Decimal('100')))
+                    
+                    if offer.offer_type == 'percentage':
+                        offer_discount = discounted_price * (offer.discount_value / Decimal('100')) * quantity
+                    else:  # flat discount
+                        offer_discount = offer.discount_value * quantity
+                    
+                    offer_discount_total += offer_discount
+                    total_discount += offer_discount
+
+
     # Calculate metrics
     total_sales_count = orders.count()
     overall_order_amount = orders.aggregate(Sum('total_price'))['total_price__sum'] or 0
     overall_wallet_amount = orders.aggregate(Sum('wallet_amount_used'))['wallet_amount_used__sum'] or 0
     coupons_applied_count = orders.filter(applied_coupon__isnull=False).count()
 
+    # Calculate total discount applied on all order items
+
+    
+     
     # Pass data to the context
     context = {
         'orders': orders,
@@ -685,6 +743,11 @@ def generate_sales_report(request):
         'overall_order_amount': overall_order_amount,
         'coupons_applied_count': coupons_applied_count,
         'overall_wallet_amount':overall_wallet_amount,
+        'total_discount': total_discount,
+        'product_discount_total': product_discount_total,
+        'offer_discount_total': offer_discount_total,
+        'coupon_discount_total': coupon_discount_total,
+ 
         'start_date': start_date,
         'end_date': end_date,
         'report_type': report_type,
@@ -693,6 +756,10 @@ def generate_sales_report(request):
     # Handle export requests
     if 'export' in request.GET:
         export_type = request.GET.get('export')
+        context.update({
+            'start_date': start_date.isoformat() if isinstance(start_date, date) else '',
+            'end_date': end_date.isoformat() if isinstance(end_date, date) else '',
+        })
         if export_type == 'pdf':
             html_content = render_to_string('sales_report.html', context)
             return export_to_pdf(html_content)

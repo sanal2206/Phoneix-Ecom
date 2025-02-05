@@ -190,7 +190,7 @@ class Offer(models.Model):
         now = timezone.now()
         return cls.objects.filter(is_active=True, start_date__lte=now, end_date__gte=now)
     
-
+from django.db.models import Min
 #Products
 class Product(models.Model):
     name = models.CharField(max_length=100)
@@ -235,6 +235,36 @@ class Product(models.Model):
                     final_price -= offer.discount_value
 
         return max(final_price, 0)  # Ensure price does not go below zero
+
+    def get_min_variant_price(self):
+        min_price=self.variants.aggregate(Min('price'))['price__min'] 
+        return min_price if min_price is not None else self.price 
+    
+
+    def get_discounted_min_variant_price(self):
+        """Returns the minimum variant price after applying all applicable discounts."""
+        final_price = self.get_min_variant_price()
+
+        # Apply product discount
+        if self.discount > 0:
+            final_price -= final_price * (self.discount / 100)
+
+        # Apply offer discount based on TypeCategory
+        if self.type_category:
+            offer = Offer.objects.filter(type_category=self.type_category, is_active=True).first()
+            if offer:
+                if offer.offer_type == 'percentage':
+                    final_price -= final_price * (offer.discount_value / 100)
+                elif offer.offer_type == 'flat':
+                    final_price -= offer.discount_value
+
+        return max(final_price, 0)  # Ensure price doesn't go negative
+
+
+
+
+ 
+
 
 # Product Images
 class ProductImage(models.Model):
@@ -480,18 +510,25 @@ class ReturnRequest(models.Model):
 
 
  
+ 
 
+ 
 class Wishlist(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist')
-    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='wishlist_items', null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlist_items')
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='wishlist_items')
     added_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.email} - {self.variant}"
 
+
+    class Meta:
+        unique_together = ('user', 'product', 'variant')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"
+ 
     def variant_price(self):
         return self.variant.price
 
- 
 
  

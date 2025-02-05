@@ -38,8 +38,8 @@
             <h2>{% if address %}Edit{% else %}Add{% endif %} Address</h2>
             <form method="POST" action="">
                 {% csrf_token %}
-                 <!-- Address Line 1 -->
-                <div class="mb-3">
+                <!-- Address Line 1 -->
+                {% comment %} <div class="mb-3">
                     <label for="address_line_1" class="form-label">Address Line 1</label>
                     <input type="text" id="address_line_1" name="address_line_1" 
                         value="{{ address.address_line_1|default:'' }}" class="form-control" required>
@@ -66,7 +66,7 @@
                 <div class="mb-3">
                     <label for="country" class="form-label">Country</label>
                     <input type="text" id="country" name="country" value="{{ address.country|default:'' }}" class="form-control" required>
-                </div>
+                </div> {% endcomment %}
                
                {% comment %} error show {% endcomment %}
                

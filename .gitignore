@@ -3,14 +3,9 @@ venv/
 .venv/
 
 
-#env variable handler
-.env
 
-
-
-
-#remove in final push by making changes to
-ecom/ecom/settings.py
+# #remove in final push by making changes to
+# ecom/ecom/settings.py
 
 
 # Ignore Python bytecode files

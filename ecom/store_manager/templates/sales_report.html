@@ -32,8 +32,6 @@
             p.file-link {
                 display: none;
             }
-
-         
         }
        
         
@@ -186,7 +184,15 @@
     <p><strong>Overall Order Amount:</strong> {{ overall_order_amount }}</p>
     <p><strong>Overall Wallet Amount Used:</strong>{{ overall_wallet_amount }}</p>
 
-     <p><strong> Total Used Coupon Count:</strong> {{ coupons_applied_count }}</p> 
+    <h3> Discount Details </h3>
+      <p><strong> Total Discount:</strong> {{  total_discount |floatformat:2}}</p> 
+     <p><strong>Total Coupon Discount:</strong> {{ coupon_discount_total|floatformat:2}}</p> 
+     <p><strong> Total Used Coupon Count:</strong> {{ coupons_applied_count  }}</p> 
+  
+    <p><strong>Total Offer Discount:</strong> {{ offer_discount_total|floatformat:2 }}</p>   
+    <p><strong>Total Product Discount:</strong> {{ product_discount_total|floatformat:2 }}</p>   
+
+ 
     <!-- Order Details Table -->
     <h2>Order Details</h2>
     <table>
@@ -218,8 +224,9 @@
 
     <!-- Export Options -->
     <p class='file-link'>
-        <a  href="?report_type={{ report_type }}&export=pdf">Download PDF</a> |
-        <a   href="?report_type={{ report_type }}&export=excel">Download Excel</a>
+        
+        <a href="?export=pdf&report_type={{ report_type }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">Export PDF</a>
+        <a href="?export=excel&report_type={{ report_type }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">Export Excel</a>
     </p>
 </body>
 </html>

@@ -73,7 +73,8 @@ def home(request):
         product.avg_rating = round(avg_rating, 1) if avg_rating else 0
         product.stars_range = range(1, 6)  # Create a range from 1 to 5 for stars
 
-     
+
+      
     
 
     # Fetch available coupons 

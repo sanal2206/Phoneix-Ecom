@@ -68,26 +68,21 @@
         <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
         <p> <a href="{% url 'password_reset' %}">Forgot Password?</a></p>
  
+
+
+
 <!-- Google Login Button -->
  
-
- 
-{% comment %} 
-<a href="{% provider_login_url 'google' %}">Sign in with Google</a>
-<a href="{% provider_login_url 'facebook' %}">Sign in with Facebook</a> {% endcomment %}
-<!-- Google Sign-In Button -->
-
 <a href="{% provider_login_url 'google' %}" class="btn btn-success btn-lg btn-block button2">
     <i class="fab fa-google"></i> Sign in with Google
 </a>
 
 <!-- Facebook Sign-In Button -->
-<a href="{% provider_login_url 'facebook' %}" class="btn btn-primary btn-lg btn-block button1">
+{% comment %} <a href="{% provider_login_url 'facebook' %}" class="btn btn-primary btn-lg btn-block button1">
     <i class="fab fa-facebook-f"></i> Sign in with Facebook
-</a>
+</a> {% endcomment %}
 
-
-  </form>
+</form>
 
   
 {% endblock content %}
