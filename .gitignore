@@ -27,7 +27,7 @@ static/
 .idea/
 
 # Ignore environment variables file
-.env
+ecom/.env
 
 # Ignore OS-specific files
 .DS_Store

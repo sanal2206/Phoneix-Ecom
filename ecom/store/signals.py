@@ -11,7 +11,7 @@ from allauth.socialaccount.models import SocialAccount
 def create_token(sender, instance, created, **kwargs):
     if created:
         if instance.is_superuser:
-            pass
+            return 
         
         else:
 

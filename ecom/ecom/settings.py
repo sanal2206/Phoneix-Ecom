@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
@@ -103,17 +103,25 @@ WSGI_APPLICATION = 'ecom.wsgi.application'
 
 
  
+ 
+
+
+# Initialize environment variables
+  # Should print your RDS endpoint
+ 
+ 
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'default_db_name'),  # Default to 'default_db_name' if not set
-        'USER': os.getenv('DB_USER', 'default_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'default_password'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.getenv('DB_NAME'),  # e.g., 'ecom'
+        'USER': os.getenv('DB_USER'),  # e.g., 'mysuperuser'
+        'PASSWORD': os.getenv('DB_PASSWORD'),  # e.g., 'mysuperuser'
+        'HOST': os.getenv('DB_HOST'),  # e.g., 'ecom.cvuym2wqodkj.eu-north-1.rds.amazonaws.com'
+        'PORT': os.getenv('DB_PORT', default='5432'),  # default is '5432'
     }
 }
+
 
 # Password validation
 
