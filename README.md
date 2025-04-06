@@ -21,8 +21,8 @@
 | Frontend     | Backend         | Database      | Hosting / Cloud  |
 |--------------|-----------------|---------------|------------------|
 | HTML, CSS    | Python (Django) | PostgreSQL    | AWS (EC2, S3)    |
-| JavaScript   | Django REST API | SQLite (dev)  |                  |
-| Bootstrap    |                 |               |                  |
+| JavaScript   | Django REST API | SQLite (dev)  | Nginx            |
+| Bootstrap    |                 |               | Gunicorn         |
 
 ---
 ##  Project Setup
